@@ -2,13 +2,14 @@ package net.devtech.grossfabrichacks;
 
 import java.util.logging.Logger;
 
-import net.devtech.grossfabrichacks.bootstrap.ClassBootstrap;
+import net.devtech.grossfabrichacks.transformer.TransformerBootstrap;
 
 public enum GrossFabricHacks {;
 	private static final Logger LOGGER = Logger.getLogger("Fabric-Transformer");
 	static {
 		LOGGER.severe("no good? no, this man is definitely up to evil.");
-		ClassBootstrap.init();
+		TransformerBootstrap.init();
+
 	}
 
 	public static void onPreLaunch() {

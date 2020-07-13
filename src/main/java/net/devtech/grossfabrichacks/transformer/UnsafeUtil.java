@@ -1,4 +1,4 @@
-package net.devtech.grossfabrichacks.bootstrap;
+package net.devtech.grossfabrichacks.transformer;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
