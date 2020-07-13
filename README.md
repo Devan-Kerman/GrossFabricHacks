@@ -13,6 +13,6 @@ repositories {
 }
 
 dependencies {
-    modImplementation group: 'net.devtech', name: 'Fabric-Transformer', version: '1.0'
+    modImplementation group: 'net.devtech', name: 'Fabric-Transformer', version: '2.0'
 }
 ```
