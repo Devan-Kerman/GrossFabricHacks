@@ -3,7 +3,7 @@ A series of hacks and utilities, for covering legitimate usecases in immoral way
 
 How to use
 ---
-ClassBootstrap#transformClass, see you there.
+https://github.com/Devan-Kerman/GrossFabricHacks/wiki
 
 ```groovy
 repositories {
@@ -13,6 +13,6 @@ repositories {
 }
 
 dependencies {
-    modImplementation group: 'net.devtech', name: 'Fabric-Transformer', version: '1.0'
+    modImplementation group: 'net.devtech', name: 'Fabric-Transformer', version: '2.0'
 }
 ```
