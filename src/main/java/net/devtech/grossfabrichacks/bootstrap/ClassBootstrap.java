@@ -1,5 +1,7 @@
 package net.devtech.grossfabrichacks.bootstrap;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -16,15 +18,18 @@ import org.spongepowered.asm.mixin.transformer.MixinProcessor;
 import org.spongepowered.asm.transformers.TreeTransformer;
 
 public class ClassBootstrap implements Opcodes {
+	private ClassBootstrap() {}
+
 	private static final Logger LOGGER = Logger.getLogger("Evil");
 	public static final Method READ_CLASS;
 	public static final Method WRITE_CLASS;
 	public static final Field PROCESSOR;
 	public static final Method APPLY_MIXINS;
 
-	/**
-	 * only those intelligent enough to mixin into the right place here get to wield such power
-	 */
+	@Retention(RetentionPolicy.CLASS)
+	@interface Hint {String value();}
+
+	@Hint("only those intelligent enough to mixin into the right place here get to wield such power")
 	public static byte[] transformClass(Object mixinTransformer, MixinEnvironment environment, String name, byte[] classBytes) throws InvocationTargetException, IllegalAccessException {
 		TreeTransformer transformer = (TreeTransformer) mixinTransformer;
 		// todo now turn this into an api, allowing mods to mixin to this for now
@@ -74,21 +79,7 @@ public class ClassBootstrap implements Opcodes {
 				hacked = Class.forName("org.spongepowered.asm.mixin.transformer.HackedMixinTransformer", false, loader);
 			}
 
-			Class<?> type = Class.forName("net.fabricmc.loader.launch.knot.KnotClassLoader");
-			Field delegateField = type.getDeclaredField("delegate");
-			delegateField.setAccessible(true);
-			Object knotClassDelegate = delegateField.get(Thread.currentThread()
-			                                                   .getContextClassLoader());
-			LOGGER.info("KnotClassDelegate found! " + knotClassDelegate);
-
-			Field fabricMixinTransformerField = delegateField.getType().getDeclaredField("mixinTransformer");
-			fabricMixinTransformerField.setAccessible(true);
-			Object fabricMixinTransformer = fabricMixinTransformerField.get(knotClassDelegate);
-			LOGGER.info("FabricMixinTransformerProxy found! " + fabricMixinTransformer);
-
-			Field transformerField = FabricMixinTransformerProxy.class.getDeclaredField("transformer");
-			transformerField.setAccessible(true);
-			Object mixinTransformer = transformerField.get(fabricMixinTransformer);
+			Object mixinTransformer = MixinEnvironment.getCurrentEnvironment().getActiveTransformer();
 			LOGGER.info("MixinTransformer found! " + mixinTransformer);
 
 			long klass = UnsafeUtil.getKlass(UnsafeUtil.UNSAFE.allocateInstance(hacked));
