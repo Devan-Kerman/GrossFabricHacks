@@ -51,18 +51,21 @@ public class TransformerBootstrap implements Opcodes {
 		}
 		// ASM patching
 		ClassNode classNode = (ClassNode) READ_CLASS.invoke(transformer, (Object) classBytes);
+		String n = classNode.name;
 		if (preMixinAsmClassTransformer != null) {
-			preMixinAsmClassTransformer.transform(name, classNode);
+			preMixinAsmClassTransformer.transform(n, classNode);
 		}
-		if (shouldWrite || (Boolean) APPLY_MIXINS.invoke(PROCESSOR.get(transformer), environment, name, classNode)) {
+
+
+		if (shouldWrite || (Boolean) APPLY_MIXINS.invoke(PROCESSOR.get(transformer), environment, n.replace('/', '.'), classNode)) {
 			if(postMixinAsmClassTransformer != null) {
-				postMixinAsmClassTransformer.transform(name, classNode);
+				postMixinAsmClassTransformer.transform(n, classNode);
 			}
 
 			// post mixin raw patching
 			byte[] post = (byte[]) WRITE_CLASS.invoke(transformer, classNode);
 			if(postMixinRawClassTransformer != null) {
-				post = postMixinRawClassTransformer.transform(name, post);
+				post = postMixinRawClassTransformer.transform(n, post);
 			}
 			return post;
 		}
@@ -162,7 +165,4 @@ public class TransformerBootstrap implements Opcodes {
 			throw new RuntimeException(t);
 		}
 	}
-
-
-	public static void init() {}
 }

@@ -13,9 +13,10 @@
   "license": "MPLv2",
   "icon": "assets/grossfabrichacks/icon.png",
   "environment": "*",
-  "entrypoints": {
-    "preLaunch": [
-      "net.devtech.grossfabrichacks.GrossFabricHacks::onPreLaunch"
-    ]
-  }
+  "depends": {
+    "fabricloader": ">=0.8.9+build.203"
+  },
+  "mixins": [
+    "gross.mixins.json"
+  ]
 }

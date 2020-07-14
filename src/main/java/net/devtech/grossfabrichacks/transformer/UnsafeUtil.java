@@ -3,13 +3,16 @@ package net.devtech.grossfabrichacks.transformer;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.logging.Logger;
 
 import sun.misc.Unsafe;
+import sun.rmi.runtime.Log;
 
 /**
  * works across all normal JVMs
  */
 public class UnsafeUtil {
+	private static final Logger LOGGER = Logger.getLogger("UnsafeUtil");
 	// constants
 	private static final Field LOOKUP_CLASS_ALLOWED_MODES_FIELD;
 	public static final Unsafe UNSAFE;
@@ -26,6 +29,7 @@ public class UnsafeUtil {
 	public static final long CLASS_KLASS_OFFSET;
 
 	static {
+		LOGGER.info("UnsafeUtil init!");
 		try {
 			// unsafe
 			Field f = Unsafe.class.getDeclaredField("theUnsafe");

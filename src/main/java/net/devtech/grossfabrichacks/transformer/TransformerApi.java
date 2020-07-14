@@ -8,6 +8,14 @@ import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
  */
 public class TransformerApi {
 	/**
+	 * manually load the class, causing it to inject itself into the class loading pipe.
+	 */
+	public static void manualLoad() {
+		//noinspection SillyAssignment,ConstantConditions
+		TransformerBootstrap.shouldWrite = TransformerBootstrap.shouldWrite;
+	}
+
+	/**
 	 * listeners are called before mixins are applied, and gives you raw access to the class' bytecode, allowing you to fiddle with things ASM normally doens't let you.
 	 */
 	public static void registerPreMixinRawClassTransformer(RawClassTransformer transformer) {

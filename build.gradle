@@ -15,10 +15,31 @@ group = project.maven_group
 minecraft {
 }
 
+configurations {
+    // configuration that holds jars to include in the jar
+    extraLibs
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // concern
+    //extraLibs files("${System.getProperty('java.home')}/../lib/tools.jar")
+    // https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy-agent
+    extraLibs group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.10.13'
+    extraLibs "net.java.dev.jna:jna:5.3.1"
+    extraLibs "net.java.dev.jna:jna-platform:5.3.1"
+
+
+    configurations.compile.extendsFrom(configurations.extraLibs)
+}
+
+jar {
+    from {
+        configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 processResources {
