@@ -13,6 +13,6 @@ repositories {
 }
 
 dependencies {
-    modImplementation group: 'net.devtech', name: 'grossfabrichacks', version: '2.1'
+    modImplementation group: 'net.devtech', name: 'grossfabrichacks', version: '3.0'
 }
 ```
