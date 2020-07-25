@@ -1,7 +1,5 @@
 package net.devtech.grossfabrichacks.instrumentation;
 
-import static net.devtech.grossfabrichacks.transformer.TransformerBootstrap.transformClass;
-
 import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,24 +9,19 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.management.ManagementFactory;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-
 import javax.swing.JOptionPane;
-
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.ClassNode;
-
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
+
+import static net.devtech.grossfabrichacks.transformer.TransformerBootstrap.transformClass;
 
 public class InstrumentationApi {
 	private static final Set<String> TRANSFORMABLE = new HashSet<>();
@@ -77,7 +70,7 @@ public class InstrumentationApi {
 	 */
 	public static Instrumentation getInstrumentation() {
 		try {
-			return (Instrumentation) Class.forName("gross.agent.InstrumentationAgent")
+			return (Instrumentation) Class.forName("net.devtech.grossfabrichacks.agent.InstrumentationAgent")
 			                              .getDeclaredField("instrumentation")
 			                              .get(null);
 		} catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
