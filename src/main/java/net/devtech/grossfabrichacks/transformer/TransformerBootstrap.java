@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
+import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -42,6 +43,15 @@ public class TransformerBootstrap implements Opcodes {
 		}
 	}
 
+	public static byte[] transformClass(ClassNode node) {
+		MixinEnvironment environment = MixinEnvironment.getCurrentEnvironment();
+		try {
+			return transform(environment.getActiveTransformer(), environment, node, null);
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private static byte[] transformClass(Object mixinTransformer, MixinEnvironment environment, String name, byte[] classBytes) throws InvocationTargetException, IllegalAccessException {
 		// patched from, and reflectionified from MixinTransformer#transformClass
 		TreeTransformer transformer = (TreeTransformer) mixinTransformer;
@@ -51,6 +61,11 @@ public class TransformerBootstrap implements Opcodes {
 		}
 		// ASM patching
 		ClassNode classNode = (ClassNode) READ_CLASS.invoke(transformer, (Object) classBytes);
+
+		return transform(transformer, environment, classNode, classBytes);
+	}
+
+	public static byte[] transform(Object transformer, MixinEnvironment environment, ClassNode classNode, byte[] original) throws IllegalAccessException, InvocationTargetException {
 		String n = classNode.name;
 		if (preMixinAsmClassTransformer != null) {
 			preMixinAsmClassTransformer.transform(n, classNode);
@@ -69,7 +84,7 @@ public class TransformerBootstrap implements Opcodes {
 			}
 			return post;
 		}
-		return classBytes;
+		return original;
 	}
 
 	static {

@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 public class GrossFabricHacks implements IMixinConfigPlugin {
 	private static final Logger LOGGER = Logger.getLogger("Fabric-Transformer");
+
 	static {
 		LOGGER.severe("no good? no, this man is definitely up to evil.");
 		EntrypointUtils.invoke("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);

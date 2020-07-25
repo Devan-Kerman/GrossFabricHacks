@@ -1,4 +1,4 @@
-package net.devtech.grossfabrichacks.transformer;
+package net.devtech.grossfabrichacks.unsafe;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
@@ -6,10 +6,9 @@ import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
 import sun.misc.Unsafe;
-import sun.rmi.runtime.Log;
 
 /**
- * works across all normal JVMs
+ * works across all normal JVMs I think
  */
 public class UnsafeUtil {
 	private static final Logger LOGGER = Logger.getLogger("UnsafeUtil");
@@ -76,13 +75,9 @@ public class UnsafeUtil {
 		DOUBLE_ARR_KLASS = getKlass(new double[0]);
 	}
 
-	public static int getFirstInt(Object object) {
-		long orig = getKlass(object);
-		FirstInt first = unsafeCast(object, FIRST_INT_KLASS);
-		unsafeCast(object, orig);
-		return first.val;
-	}
-
+	/**
+	 * set the first 4 bytes of an object to something, this can be used to mutate the size of an array
+	 */
 	public static void setFirstInt(Object object, int val) {
 		long orig = getKlass(object);
 		FirstInt firstInt = unsafeCast(object, FIRST_INT_KLASS);
@@ -192,9 +187,22 @@ public class UnsafeUtil {
 	}
 
 	/**
-	 * get the klass value from a class
+	 * get the klass pointer of a class, only works on instantiatable classes
 	 */
 	public static long getKlassFromClass(Class<?> type) {
+		try {
+			return getKlass(UNSAFE.allocateInstance(type));
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * get the klass value from a class
+	 * @deprecated doesn't work, idk why todo fix
+	 */
+	@Deprecated
+	public static long getKlassFromClass0(Class<?> type) {
 		if (EIGHT_BYTE_KLASS)
 			return UNSAFE.getLong(type, CLASS_KLASS_OFFSET);
 		else
