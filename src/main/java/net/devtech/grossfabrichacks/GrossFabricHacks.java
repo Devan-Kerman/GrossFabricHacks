@@ -4,13 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import com.sun.org.apache.bcel.internal.generic.ILOAD;
-import com.sun.org.apache.bcel.internal.generic.IRETURN;
 import net.devtech.grossfabrichacks.entrypoints.PrePreLaunch;
-import net.devtech.grossfabrichacks.instrumentation.InstrumentationApi;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
@@ -18,6 +13,7 @@ import net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils;
 
 public class GrossFabricHacks implements IMixinConfigPlugin {
 	private static final Logger LOGGER = Logger.getLogger("Fabric-Transformer");
+
 	static {
 		LOGGER.severe("no good? no, this man is definitely up to evil.");
 		EntrypointUtils.invoke("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);

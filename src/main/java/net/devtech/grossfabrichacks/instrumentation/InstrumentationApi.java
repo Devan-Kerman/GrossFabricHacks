@@ -11,9 +11,7 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.management.ManagementFactory;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -37,14 +35,13 @@ public class InstrumentationApi {
 	 * this allows you to mix into any all classes (including JDK!) classes, with a few caveats.
 	 *
 	 * If the class was loaded *before* you get to it, do not call this method!
-	 *
 	 * don't pipe classes that may already be transformable by mixin, or they may be called twice.
 	 *
-	 * @param className null if you want to transform JDK classes, the name must come in dot notation, so java.lang.Object
+	 * @param cls the internal name of the class
 	 */
-	public static void pipeClassThroughTransformerBootstrap(String className) {
-		TRANSFORMABLE.add(className);
-		DontLoad.init();
+	public static void pipeClassThroughTransformerBootstrap(String cls) {
+		TRANSFORMABLE.add(cls);
+		Transformable.init();
 	}
 
 	public static void retransform(Class<?> cls, AsmClassTransformer transformer) {
@@ -95,7 +92,7 @@ public class InstrumentationApi {
 			File grossJar = new File(grossHackFolder, "gross_agent.jar");
 			if (!grossJar.exists()) {
 				LOGGER.info("no gross_agent.jar found, cloning new one");
-				unpack("/jars/gross_agent.jar", grossJar);
+				unpack(grossJar);
 			} else {
 				LOGGER.info("gross_agent.jar located!");
 			}
@@ -107,6 +104,7 @@ public class InstrumentationApi {
 			LOGGER.info("VM PID: " + pid);
 			LOGGER.info("Attaching to VM");
 			try {
+
 				ByteBuddyAgent.attach(grossJar, pid);
 			} catch (Throwable t) {
 				if(Desktop.isDesktopSupported() && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
@@ -125,8 +123,8 @@ public class InstrumentationApi {
 		}
 	}
 
-	private static void unpack(String path, File file) throws IOException {
-		try (InputStream stream = GrossFabricHacks.class.getResourceAsStream(path)) {
+	private static void unpack(File file) throws IOException {
+		try (InputStream stream = GrossFabricHacks.class.getResourceAsStream("/jars/gross_agent.jar")) {
 			try (FileOutputStream out = new FileOutputStream(file)) {
 				byte[] arr = new byte[2048];
 				int len;
@@ -139,21 +137,36 @@ public class InstrumentationApi {
 
 
 	// to seperate out the static block
-	private static class DontLoad {
+	private static class Transformable {
+		private static final Instrumentation INSTRUMENTATION = InstrumentationApi.getInstrumentation();
+		private static final ClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+			ClassReader reader = new ClassReader(classfileBuffer);
+			ClassNode node = new ClassNode();
+			reader.accept(node, 0);
+			if(TRANSFORMABLE.remove(node.name)) {
+				if(TRANSFORMABLE.isEmpty()) {
+					deinit();
+				}
+				return transformClass(node);
+			}
+			return classfileBuffer;
+		};
+		private static boolean init;
 		static {
 			// pipe transformer to
 			TransformerApi.manualLoad();
-			Instrumentation instrumentation = InstrumentationApi.getInstrumentation();
-			instrumentation.addTransformer((loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
-				if(TRANSFORMABLE.remove(className)) {
-					return transformClass(className,
-					               classfileBuffer);
-				}
-				return classfileBuffer;
-			});
-			LOGGER.info("Instrumentation<->TransformerBootstrap pipe successfully established!");
 		}
 
-		private static void init() {}
+		private static void deinit() {
+			INSTRUMENTATION.removeTransformer(TRANSFORMER);
+			init = false;
+		}
+
+		private static void init() {
+			if(!init) {
+				INSTRUMENTATION.addTransformer(TRANSFORMER);
+				init = true;
+			}
+		}
 	}
 }

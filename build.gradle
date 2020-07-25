@@ -1,7 +1,5 @@
-import org.gradle.api.publish.maven.MavenPublication
-
 plugins {
-    id 'fabric-loom' version '0.4-SNAPSHOT'
+    id 'fabric-loom' version '0.4.30'
     id 'maven-publish'
 }
 
@@ -26,12 +24,11 @@ dependencies {
     modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
 
     // concern
-    //extraLibs files("${System.getProperty('java.home')}/../lib/tools.jar")
+   // extraLibs files("${System.getProperty('java.home')}/../lib/tools.jar")
     // https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy-agent
     extraLibs group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.10.13'
     extraLibs "net.java.dev.jna:jna:5.3.1"
     extraLibs "net.java.dev.jna:jna-platform:5.3.1"
-
 
     configurations.compile.extendsFrom(configurations.extraLibs)
 }
