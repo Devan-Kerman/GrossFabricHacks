@@ -1,4 +1,4 @@
-package gross.agent;
+package net.devtech.grossfabrichacks.agent;
 
 import java.lang.instrument.Instrumentation;
 
