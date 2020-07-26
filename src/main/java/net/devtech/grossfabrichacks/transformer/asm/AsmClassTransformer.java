@@ -23,7 +23,7 @@ public interface AsmClassTransformer {
 			ClassNode node = new ClassNode();
 			reader.accept(node, 0);
 			this.transform(node.name, node);
-			ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+			ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			node.accept(writer);
 			return writer.toByteArray();
 		};
