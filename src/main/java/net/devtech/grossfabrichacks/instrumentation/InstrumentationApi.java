@@ -40,11 +40,12 @@ public class InstrumentationApi {
     }
 
     /**
-     * a convenience method for {@link InstrumentationApi#retransform} intended to be used when a class is not visible
+     * a convenience method for {@link InstrumentationApi#retransform(Class, AsmClassTransformer)}
+     * intended to be used when the target class is not visible
      *
      * @param cls         the binary name (defined in the last section of the {@linkplain ClassLoader ClassLoader javadoc}
      *                    of the class to retransform
-     * @param transformer the class transformer.
+     * @param transformer the class transformer
      */
     public static void retransform(final String cls, final AsmClassTransformer transformer) {
         try {
@@ -59,7 +60,28 @@ public class InstrumentationApi {
     }
 
     /**
-     * retransform a class, className may be null if it's a JDK class
+     * a convenience method for {@link InstrumentationApi#retransform(Class, RawClassTransformer)}
+     * intended to be used when the target class is not visible
+     *
+     * @param cls         the binary name
+     *                    (defined in the last section of the {@linkplain ClassLoader ClassLoader Javadoc})
+     *                    of the class to retransform
+     * @param transformer the class transformer
+     */
+    public static void retransform(final String cls, final RawClassTransformer transformer) {
+        try {
+            retransform(Class.forName(cls), transformer);
+        } catch (final ClassNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    /**
+     * retransform the class represented by {@code cls} by {@code transformer}.
+     * The {@code className} passed to {@code transformer} may be null if {@code cls} is a JDK class.
+     *
+     * @param cls         the class to retransform.
+     * @param transformer the class transformer.
      */
     public static void retransform(Class<?> cls, RawClassTransformer transformer) {
         Instrumentation instrumentation = getInstrumentation();
@@ -103,7 +125,6 @@ public class InstrumentationApi {
             }
         }
     }
-
 
     // to seperate out the static block
     private static class Transformable {
