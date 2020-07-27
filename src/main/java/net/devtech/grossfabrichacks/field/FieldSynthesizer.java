@@ -24,7 +24,7 @@ public class FieldSynthesizer {
         TransformerApi.registerPreMixinAsmClassTransformer(FieldSynthesizer::transform);
 
         LOGGER.info("Initialization complete. Multiple inheritance of state is now at your key presses.");
-//        final StatefulImplementation interfase = new StatefulImplementationImpl();
+        final StatefulImplementation interfase = new StatefulImplementationImpl();
 //        final StatefulInterface test = new StatefulInterface() {};
 
 //        final Class<?> klass = Class.forName(StatefulInterface.class.getName(), true, null);

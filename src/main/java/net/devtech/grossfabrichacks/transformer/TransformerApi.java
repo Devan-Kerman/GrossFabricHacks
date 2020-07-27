@@ -31,6 +31,7 @@ public class TransformerApi {
 	 */
 	public static void registerPreMixinAsmClassTransformer(AsmClassTransformer transformer) {
 		TransformerBootstrap.shouldWrite = true;
+
 		if (TransformerBootstrap.preMixinAsmClassTransformer == null) {
 			TransformerBootstrap.preMixinAsmClassTransformer = transformer;
 		} else {

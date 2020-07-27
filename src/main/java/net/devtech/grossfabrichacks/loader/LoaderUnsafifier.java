@@ -17,7 +17,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import sun.misc.Unsafe;
 
 public class LoaderUnsafifier {
     public static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/UnsafeLoader");
@@ -28,7 +27,7 @@ public class LoaderUnsafifier {
         LOGGER.info("Unsafifying KnotClassLoader.");
 
         InstrumentationApi.retransform("net.fabricmc.loader.launch.knot.KnotClassLoader", (final String name, final ClassNode klass) -> {
-            unsafelyDefineClass(klass);
+//            unsafelyDefineClass(klass);
 //            findUnsafelyDefinedClass(klass);
         });
 
@@ -37,11 +36,11 @@ public class LoaderUnsafifier {
 
     private static void unsafelyDefineClass(final ClassNode klass) {
         final DelegatingInsnList instructions = new DelegatingInsnList();
-        final String Unsafe = ASMUtil.getInternalName(Unsafe.class);
+        final String unsafeClassName = ASMUtil.toInternalName(UnsafeUtil.className);
 
         instructions.addFieldInsn(Opcodes.GETSTATIC, ASMUtil.getInternalName(LoaderUnsafifier.class), "UNSAFELY_DEFINED_CLASSES", Type.getDescriptor(Map.class));
         instructions.addVarInsn(Opcodes.ALOAD, 1);
-        instructions.addFieldInsn(Opcodes.GETSTATIC, ASMUtil.getInternalName(UnsafeUtil.class), "UNSAFE", Type.getDescriptor(Unsafe.class));
+        instructions.addFieldInsn(Opcodes.GETSTATIC, ASMUtil.getInternalName(UnsafeUtil.class), "UNSAFE", Type.getDescriptor(UnsafeUtil.unsafeClass));
         instructions.addVarInsn(Opcodes.ALOAD, 1);
         instructions.addVarInsn(Opcodes.ALOAD, 5);
         instructions.addInsn(Opcodes.ICONST_0);
@@ -51,7 +50,7 @@ public class LoaderUnsafifier {
         instructions.addInsn(Opcodes.ACONST_NULL);
         instructions.addMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                Unsafe,
+                unsafeClassName,
                 "defineClass",
                 "(Ljava/lang/String;[BIILjava/lang/ClassLoader;Ljava/security/ProtectionDomain;)Ljava/lang/Class;",
                 false
@@ -67,7 +66,7 @@ public class LoaderUnsafifier {
 
         ASMUtil.replaceInstructions(ASMUtil.getMethod(klass, "loadClass").instructions, instructions,
                 FrameNode.class::isInstance,
-                (final AbstractInsnNode end) -> end instanceof MethodInsnNode && "defineClass".equals(((MethodInsnNode) end).name) && !Unsafe.equals(((MethodInsnNode) end).owner)
+                (final AbstractInsnNode end) -> end instanceof MethodInsnNode && "defineClass".equals(((MethodInsnNode) end).name) && !unsafeClassName.equals(((MethodInsnNode) end).owner)
         );
     }
 

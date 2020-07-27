@@ -172,7 +172,7 @@ public class TransformerBootstrap implements Opcodes {
 			// here, we modify the klass pointer in the object to point towards the HackedMixinTransformer class, effectively turning the existing
 			// MixinTransformer instance into
 			// an instance of HackedMixinTransformer
-			long klass = UnsafeUtil.getKlass(UnsafeUtil.UNSAFE.allocateInstance(hacked));
+			long klass = UnsafeUtil.getKlass(UnsafeUtil.allocateInstance(hacked));
 			UnsafeUtil.unsafeCast(mixinTransformer, klass);
 			LOGGER.info("Unsafe casted mixin transformer success!");
 		} catch (Throwable t) {
