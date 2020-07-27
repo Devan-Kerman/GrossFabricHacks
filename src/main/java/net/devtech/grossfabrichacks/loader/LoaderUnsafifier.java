@@ -27,8 +27,8 @@ public class LoaderUnsafifier {
         LOGGER.info("Unsafifying KnotClassLoader.");
 
         InstrumentationApi.retransform("net.fabricmc.loader.launch.knot.KnotClassLoader", (final String name, final ClassNode klass) -> {
-//            unsafelyDefineClass(klass);
-//            findUnsafelyDefinedClass(klass);
+            unsafelyDefineClass(klass);
+            findUnsafelyDefinedClass(klass);
         });
 
         LOGGER.info("Unsafified KnotClassLoader. concernedtater");
