@@ -1,10 +1,13 @@
 package net.devtech.grossfabrichacks.util;
 
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Predicate;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -34,21 +37,34 @@ public interface ASMUtil extends Opcodes {
     }
 
     static List<AbstractInsnNode> getInstructions(final ClassNode klass, final String method) {
-        return getInstructions(getMethod(klass, method));
+        return getInstructions(getFirstMethod(klass, method));
     }
 
     static List<AbstractInsnNode> getInstructions(final MethodNode method) {
         return Arrays.asList(method.instructions.toArray());
     }
 
-    static MethodNode getMethod(final ClassNode klass, final String name) {
+    @Contract
+    static @Nonnull MethodNode getFirstMethod(final ClassNode klass, final String name) {
         for (final MethodNode method : klass.methods) {
             if (name.equals(method.name)) {
                 return method;
             }
         }
 
-        throw new RuntimeException(String.format("method %s not found in %s.", name, klass.name));
+        return null;
+    }
+
+    static List<MethodNode> getMethods(final ClassNode klass, final String name) {
+        final List<MethodNode> methods = new ReferenceArrayList<>();
+
+        for (final MethodNode method : klass.methods) {
+            if (name.equals(method.name)) {
+                methods.add(method);
+            }
+        }
+
+        return methods;
     }
 
     /**

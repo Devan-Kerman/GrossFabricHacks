@@ -2,11 +2,13 @@ package net.devtech.grossfabrichacks.loader;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.field.FieldSynthesizer;
 import net.devtech.grossfabrichacks.instrumentation.InstrumentationApi;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import net.devtech.grossfabrichacks.util.ASMUtil;
 import net.devtech.grossfabrichacks.util.DelegatingInsnList;
+import net.minecraft.client.MinecraftClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Label;
@@ -15,6 +17,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FrameNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -26,10 +29,19 @@ public class LoaderUnsafifier {
     public static void init() {
         LOGGER.info("Unsafifying KnotClassLoader.");
 
-        InstrumentationApi.retransform("net.fabricmc.loader.launch.knot.KnotClassLoader", (final String name, final ClassNode klass) -> {
-            unsafelyDefineClass(klass);
-            findUnsafelyDefinedClass(klass);
+//        InstrumentationApi.retransform("net.fabricmc.loader.launch.knot.KnotClassLoader", (final String name, final ClassNode klass) -> {
+//            unsafelyDefineClass(klass);
+//            findUnsafelyDefinedClass(klass);
+//        });
+        InstrumentationApi.retransform(MinecraftClient.class, (name, klass) -> {
+            final MethodNode method = ASMUtil.getFirstMethod(klass, "equals");
+
+            method.instructions.clear();
+            method.instructions.add(new InsnNode(Opcodes.ICONST_1));
+            method.instructions.add(new InsnNode(Opcodes.IRETURN));
         });
+
+        LOGGER.info(new Object().equals(new GrossFabricHacks()));
 
         LOGGER.info("Unsafified KnotClassLoader. concernedtater");
     }
@@ -64,7 +76,7 @@ public class LoaderUnsafifier {
                 true
         );
 
-        ASMUtil.replaceInstructions(ASMUtil.getMethod(klass, "loadClass").instructions, instructions,
+        ASMUtil.replaceInstructions(ASMUtil.getFirstMethod(klass, "loadClass").instructions, instructions,
                 FrameNode.class::isInstance,
                 (final AbstractInsnNode end) -> end instanceof MethodInsnNode && "defineClass".equals(((MethodInsnNode) end).name) && !unsafeClassName.equals(((MethodInsnNode) end).owner)
         );
@@ -88,7 +100,7 @@ public class LoaderUnsafifier {
         instructions.addLabel(afterCheck);
 
         for (MethodNode method : klass.methods) {
-            ASMUtil.insert(ASMUtil.getMethod(klass, method.name).instructions, instructions,
+            ASMUtil.insert(ASMUtil.getFirstMethod(klass, method.name).instructions, instructions,
                     (final AbstractInsnNode after) -> after instanceof MethodInsnNode && "findLoadedClass".equals(((MethodInsnNode) after).name)
             );
         }
