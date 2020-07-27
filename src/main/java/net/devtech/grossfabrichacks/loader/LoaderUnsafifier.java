@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.field.FieldSynthesizer;
 import net.devtech.grossfabrichacks.instrumentation.InstrumentationApi;
+import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import net.devtech.grossfabrichacks.util.ASMUtil;
 import net.devtech.grossfabrichacks.util.DelegatingInsnList;
@@ -25,6 +26,18 @@ public class LoaderUnsafifier {
     public static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/UnsafeLoader");
 
     private static final Map<String, Class<?>> UNSAFELY_DEFINED_CLASSES = new ConcurrentHashMap<>();
+    private static final AsmClassTransformer equals = (name, klass) -> {
+        MethodNode method = ASMUtil.getFirstMethod(klass, "equals");
+
+        if (method == null) {
+            klass.methods.add(method = new MethodNode());
+        } else {
+            method.instructions.clear();
+        }
+
+        method.instructions.add(new InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new InsnNode(Opcodes.IRETURN));
+    };
 
     public static void init() {
         LOGGER.info("Unsafifying KnotClassLoader.");
@@ -33,19 +46,9 @@ public class LoaderUnsafifier {
 //            unsafelyDefineClass(klass);
 //            findUnsafelyDefinedClass(klass);
 //        });
-        InstrumentationApi.retransform(MinecraftClient.class, (name, klass) -> {
-            MethodNode method = ASMUtil.getFirstMethod(klass, "equals");
+        InstrumentationApi.retransform(GrossFabricHacks.class, equals);
 
-            if (method == null) {
-                klass.methods.add(method = new MethodNode());
-            }
-
-            method.instructions.clear();
-            method.instructions.add(new InsnNode(Opcodes.ICONST_1));
-            method.instructions.add(new InsnNode(Opcodes.IRETURN));
-        });
-
-        LOGGER.info(new Object().equals(new GrossFabricHacks()));
+        LOGGER.info(new GrossFabricHacks().equals(UnsafeUtil.allocateInstance(MinecraftClient.class)));
 
         LOGGER.info("Unsafified KnotClassLoader. concernedtater");
     }
