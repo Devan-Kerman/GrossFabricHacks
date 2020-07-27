@@ -18,7 +18,7 @@ import org.objectweb.asm.tree.MethodNode;
 public class FieldSynthesizer {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/FieldHandler");
 
-    public static void registerTransformer() {
+    public static void init() {
         TransformerApi.registerPreMixinAsmClassTransformer((final String name, final ClassNode klass) -> {
             try {
                 transform(name, klass);

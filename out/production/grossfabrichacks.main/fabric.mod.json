@@ -17,6 +17,6 @@
     "fabricloader": ">=0.8.9+build.203"
   },
   "mixins": [
-    "gross.mixins.json"
+    "grossfabrichacks.mixins.json"
   ]
 }
