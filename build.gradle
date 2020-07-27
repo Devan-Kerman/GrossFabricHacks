@@ -21,8 +21,9 @@ configurations {
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+    compileOnly "org.jetbrains:annotations:+"
     // concern
    // extraLibs files("${System.getProperty('java.home')}/../lib/tools.jar")
     // https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy-agent
