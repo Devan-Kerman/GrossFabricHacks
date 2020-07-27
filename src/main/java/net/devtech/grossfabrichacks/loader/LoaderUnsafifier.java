@@ -34,7 +34,11 @@ public class LoaderUnsafifier {
 //            findUnsafelyDefinedClass(klass);
 //        });
         InstrumentationApi.retransform(MinecraftClient.class, (name, klass) -> {
-            final MethodNode method = ASMUtil.getFirstMethod(klass, "equals");
+            MethodNode method = ASMUtil.getFirstMethod(klass, "equals");
+
+            if (method == null) {
+                klass.methods.add(method = new MethodNode());
+            }
 
             method.instructions.clear();
             method.instructions.add(new InsnNode(Opcodes.ICONST_1));
