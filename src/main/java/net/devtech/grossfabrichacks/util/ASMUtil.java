@@ -48,6 +48,7 @@ public interface ASMUtil extends Opcodes {
         for (final MethodNode method : klass.methods) {
             if (name.equals(method.name)) {
                 first = method;
+                break;
             }
         }
 
