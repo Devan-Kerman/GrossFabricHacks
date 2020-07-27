@@ -5,8 +5,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
-import net.devtech.grossfabrichacks.field.FieldSynthesizer;
-import net.devtech.grossfabrichacks.loader.LoaderUnsafifier;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
@@ -180,8 +178,5 @@ public class TransformerBootstrap implements Opcodes {
 		} catch (Throwable t) {
 			throw new RuntimeException(t);
 		}
-
-		LoaderUnsafifier.init();
-		FieldSynthesizer.init();
 	}
 }

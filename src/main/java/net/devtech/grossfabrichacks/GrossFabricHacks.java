@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import net.devtech.grossfabrichacks.entrypoints.PrePreLaunch;
+import net.devtech.grossfabrichacks.field.FieldSynthesizer;
+import net.devtech.grossfabrichacks.loader.LoaderUnsafifier;
 import net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -15,6 +17,8 @@ public class GrossFabricHacks implements IMixinConfigPlugin {
 	static {
 		LOGGER.severe("no good? no, this man is definitely up to evil.");
 		EntrypointUtils.invoke("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
+        LoaderUnsafifier.init();
+        FieldSynthesizer.init();
 	}
 
     @Override
