@@ -1,4 +1,4 @@
-package net.devtech.grossfabrichacks.util;
+package net.devtech.grossfabrichacks.asm;
 
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import java.io.IOException;

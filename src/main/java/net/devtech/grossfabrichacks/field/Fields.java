@@ -1,8 +1,7 @@
 package net.devtech.grossfabrichacks.field;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Target;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -12,7 +11,6 @@ import org.objectweb.asm.Type;
  * It is intended to be used with {@link Getter} or {@link Setter}.
  */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
 public @interface Fields {
     /**
      * @return information about the fields to generate in the annotated type.
@@ -23,6 +21,8 @@ public @interface Fields {
      * This annotation describes a field declaration.<br>
      * It is intended for use in {@link Fields#value}.
      */
+    @Target(ElementType.TYPE)
+    @Repeatable(Fields.class)
     @interface Entry {
         /**
          * The default access for generated fields is {@code public synthetic}.

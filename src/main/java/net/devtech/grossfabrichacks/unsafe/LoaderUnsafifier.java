@@ -2,9 +2,8 @@ package net.devtech.grossfabrichacks.unsafe;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
-import net.devtech.grossfabrichacks.GrossFabricHacks;
-import net.devtech.grossfabrichacks.entrypoints.PrePreLaunch;
-import net.devtech.grossfabrichacks.util.ASMUtil;
+import net.devtech.grossfabrichacks.asm.ASMUtil;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -13,22 +12,36 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-public class LoaderUnsafifier implements PrePreLaunch, Opcodes {
-    private static final Logger LOGGER = GrossFabricHacks.getLogger("LoaderUnsafifier");
-    public static final ClassLoader UNSAFE_LOADER = getUnsafeLoader(Thread.currentThread().getContextClassLoader());
+public class LoaderUnsafifier implements Opcodes {
+    private static final Logger LOGGER = LogManager.getLogger("LoaderUnsafifier");
 
-    public static ClassLoader getUnsafeLoader(final ClassLoader parent) {
-        return UnsafeUtil.unsafeCast(parent, UnsafeUtil.getKlassFromClass(getUnsafeLoaderClass(parent)));
+    public static final ClassLoader UNSAFE_LOADER;
+
+    static {
+        final ClassLoader victim = Thread.currentThread().getContextClassLoader();
+        final String superName = victim.getClass().getName();
+
+        LOGGER.warn(String.format("%s, you fool! Loading me was a grave mistake.", superName.substring(superName.lastIndexOf('.') + 1).replace('$', '.')));
+        UNSAFE_LOADER = unsafifyLoader(victim);
     }
 
-    public static <T> Class<T> getUnsafeLoaderClass(final ClassLoader superLoader) {
-        return getUnsafeLoaderClass(superLoader.getClass());
+    /**
+     * a convenient alternative to {@link Class#forName}
+     */
+    public static void init() {}
+
+    public static ClassLoader unsafifyLoader(final ClassLoader victim) {
+        return UnsafeUtil.unsafeCast(victim, UnsafeUtil.getKlassFromClass(getUnsafeLoaderClass(victim)));
     }
 
-    public static <T> Class<T> getUnsafeLoaderClass(final Class<?> superclass) {
+    public static <T> Class<T> getUnsafeLoaderClass(final ClassLoader victim) {
+        return getUnsafeLoaderClass(victim.getClass());
+    }
+
+    public static <T> Class<T> getUnsafeLoaderClass(final Class<?> victim) {
         final ClassNode klass = new ClassNode();
-        final String superName = ASMUtil.getInternalName(superclass);
-        final String binaryName = superclass.getPackage().getName() + ".GFHUnsafeLoader";
+        final String superName = ASMUtil.getInternalName(victim);
+        final String binaryName = victim.getPackage().getName() + ".GFHUnsafeLoader";
         final String internalName = ASMUtil.toInternalName(binaryName);
         final String UnsafeUtilName = ASMUtil.getInternalName(UnsafeUtil.class);
         final String FieldName = ASMUtil.getInternalName(Field.class);
@@ -41,8 +54,6 @@ public class LoaderUnsafifier implements PrePreLaunch, Opcodes {
         final String logger = "LOGGER";
         final String loggerClass = ASMUtil.getInternalName(Logger.class);
         final String loggerDescriptor = ASMUtil.toDescriptor(loggerClass);
-
-        LOGGER.warn(String.format("%s, you fool! Loading me was a grave mistake.", superName.substring(superName.lastIndexOf('/') + 1).replace('$', '.')));
 
         klass.visit(V1_8, Opcodes.ACC_PUBLIC, internalName, null, superName, null);
         klass.visitField(
@@ -197,9 +208,6 @@ public class LoaderUnsafifier implements PrePreLaunch, Opcodes {
 
         klass.accept(writer);
 
-        return UnsafeUtil.defineClass(binaryName, writer.toByteArray(), superclass.getClassLoader());
+        return UnsafeUtil.defineClass(binaryName, writer.toByteArray(), victim.getClassLoader());
     }
-
-    @Override
-    public void onPrePreLaunch() {}
 }

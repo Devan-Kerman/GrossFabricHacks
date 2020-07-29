@@ -1,9 +1,9 @@
 package net.devtech.grossfabrichacks.field;
 
 import java.util.List;
+import net.devtech.grossfabrichacks.asm.ASMUtil;
+import net.devtech.grossfabrichacks.asm.DelegatingInsnList;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
-import net.devtech.grossfabrichacks.util.ASMUtil;
-import net.devtech.grossfabrichacks.util.DelegatingInsnList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Opcodes;

@@ -17,6 +17,7 @@ public class Unsafe {
     private static final Method getAndSetInt = getMethod("getAndSetInt", Object.class, long.class, int.class);
     private static final Method getAndAddInt = getMethod("getAndAddInt", Object.class, long.class, int.class);
     private static final Method getAndSetLong = getMethod("getAndSetLong", Object.class, long.class, long.class);
+    private static final Method putInt = getMethod("putInt", Object.class, long.class, int.class);
     private static final Method putLong = getMethod("putLong", Object.class, long.class, long.class);
     private static final Method objectFieldOffset = getMethod("objectFieldOffset", Field.class);
     private static final Method arrayBaseOffset = getMethod("arrayBaseOffset", Class.class);
@@ -45,7 +46,7 @@ public class Unsafe {
      */
     public static int getInt(final Object object, final long offset) {
         try {
-            return (int) Unsafe.getInt.invoke(theUnsafe, object, offset);
+            return (int) getInt.invoke(theUnsafe, object, offset);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -56,7 +57,7 @@ public class Unsafe {
      */
     public static long getLong(final Object object, final long offset) {
         try {
-            return (long) Unsafe.getLong.invoke(theUnsafe, object, offset);
+            return (long) getLong.invoke(theUnsafe, object, offset);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -67,7 +68,7 @@ public class Unsafe {
      */
     public static Object getObject(final Object object, final long offset) {
         try {
-            return Unsafe.getObject.invoke(theUnsafe, object, offset);
+            return getObject.invoke(theUnsafe, object, offset);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -75,7 +76,7 @@ public class Unsafe {
 
     public static int getAndSetInt(final Object object, final long offset, final int value) {
         try {
-            return (int) Unsafe.getAndSetInt.invoke(theUnsafe, object, offset, value);
+            return (int) getAndSetInt.invoke(theUnsafe, object, offset, value);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -83,7 +84,7 @@ public class Unsafe {
 
     public static int getAndAddInt(final Object object, final long offset, final int value) {
         try {
-            return (int) Unsafe.getAndAddInt.invoke(theUnsafe, object, offset, value);
+            return (int) getAndAddInt.invoke(theUnsafe, object, offset, value);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -91,7 +92,15 @@ public class Unsafe {
 
     public static long getAndSetLong(final Object object, final long offset, final long value) {
         try {
-            return (long) Unsafe.getAndSetLong.invoke(theUnsafe, object, offset, value);
+            return (long) getAndSetLong.invoke(theUnsafe, object, offset, value);
+        } catch (final IllegalAccessException | InvocationTargetException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static void putInt(final Object object, final long offset, final int value) {
+        try {
+            putInt.invoke(theUnsafe, object, offset, value);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -99,7 +108,7 @@ public class Unsafe {
 
     public static void putLong(final Object object, final long offset, final long value) {
         try {
-            Unsafe.putLong.invoke(theUnsafe, offset, value);
+            putLong.invoke(theUnsafe, object, offset, value);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -107,7 +116,7 @@ public class Unsafe {
 
     public static long objectFieldOffset(final Field field) {
         try {
-            return (long) Unsafe.objectFieldOffset.invoke(theUnsafe, field);
+            return (long) objectFieldOffset.invoke(theUnsafe, field);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -116,7 +125,7 @@ public class Unsafe {
     public static <T> T allocateInstance(final Class<?> klass) {
         try {
             //noinspection unchecked
-            return (T) Unsafe.allocateInstance.invoke(theUnsafe, klass);
+            return (T) allocateInstance.invoke(theUnsafe, klass);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -126,7 +135,7 @@ public class Unsafe {
                                            final ClassLoader loader, final ProtectionDomain protectionDomain) {
         try {
             //noinspection unchecked
-            return (Class<T>) Unsafe.defineClass.invoke(theUnsafe, binaryName, klass, offset, length, loader, protectionDomain);
+            return (Class<T>) defineClass.invoke(theUnsafe, binaryName, klass, offset, length, loader, protectionDomain);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -151,7 +160,7 @@ public class Unsafe {
 
     public static int arrayBaseOffset(final Class<?> arrayClass) {
         try {
-            return (int) Unsafe.arrayBaseOffset.invoke(theUnsafe, arrayClass);
+            return (int) arrayBaseOffset.invoke(theUnsafe, arrayClass);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -159,7 +168,7 @@ public class Unsafe {
 
     public static int arrayIndexScale(final Class<?> arrayClass) {
         try {
-            return (int) Unsafe.arrayIndexScale.invoke(theUnsafe, arrayClass);
+            return (int) arrayIndexScale.invoke(theUnsafe, arrayClass);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -167,7 +176,7 @@ public class Unsafe {
 
     public static long allocateMemory(final long bytes) {
         try {
-            return (long) Unsafe.allocateMemory.invoke(theUnsafe, bytes);
+            return (long) allocateMemory.invoke(theUnsafe, bytes);
         } catch (final IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -175,7 +184,7 @@ public class Unsafe {
 
     public static void copyMemory(final long srcAddress, final long destAddress, final long bytes) {
         try {
-            Unsafe.copyMemory1.invoke(theUnsafe, srcAddress, destAddress, bytes);
+            copyMemory1.invoke(theUnsafe, srcAddress, destAddress, bytes);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -183,7 +192,7 @@ public class Unsafe {
 
     public static void copyMemory(final Object src, final long srcAddress, final Object dest, final long destAddress, final long bytes) {
         try {
-            Unsafe.copyMemory0.invoke(theUnsafe, src, srcAddress, dest, destAddress, bytes);
+            copyMemory0.invoke(theUnsafe, src, srcAddress, dest, destAddress, bytes);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }

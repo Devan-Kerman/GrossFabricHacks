@@ -161,6 +161,22 @@ public class UnsafeUtil {
         return Unsafe.getInt(type, CLASS_KLASS_OFFSET);
     }
 
+    public static void putInt(final Object object, final String field, final int value) {
+        try {
+            Unsafe.putInt(object, Unsafe.objectFieldOffset(object.getClass().getDeclaredField(field)), value);
+        } catch (final NoSuchFieldException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static void putInt(final Class<?> klass, final Object object, final String field, final int value) {
+        try {
+            Unsafe.putInt(object, Unsafe.objectFieldOffset(klass.getDeclaredField(field)), value);
+        } catch (final NoSuchFieldException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     public static <T> T getObject(final long address) {
         final Object[] box = new Object[1];
         final long baseOffset = Unsafe.arrayBaseOffset(Object[].class);
@@ -169,19 +185,6 @@ public class UnsafeUtil {
 
         //noinspection unchecked
         return (T) box[0];
-    }
-
-    public static <T> T getObject(final Object owner, final String fieldName) {
-        try {
-            final Field field = owner.getClass().getDeclaredField(fieldName);
-
-            field.setAccessible(true);
-
-            //noinspection unchecked
-            return (T) field.get(owner);
-        } catch (final NoSuchFieldException | IllegalAccessException exception) {
-            throw new RuntimeException(exception);
-        }
     }
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass) {

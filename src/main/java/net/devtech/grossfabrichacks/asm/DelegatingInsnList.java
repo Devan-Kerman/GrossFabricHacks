@@ -1,4 +1,4 @@
-package net.devtech.grossfabrichacks.util;
+package net.devtech.grossfabrichacks.asm;
 
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
