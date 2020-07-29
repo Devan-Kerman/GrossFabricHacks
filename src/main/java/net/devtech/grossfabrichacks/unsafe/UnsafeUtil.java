@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.logging.Logger;
+import org.objectweb.asm.Opcodes;
 
 /**
  * works across all normal JVMs I think
@@ -421,16 +422,15 @@ public class UnsafeUtil {
     static {
         LOGGER.info("UnsafeUtil init!");
         try {
-            // todo does not exist in Java 14
+            // todo fails with Java 14
             // some random field or something
             Field modifiersField = Field.class.getDeclaredField("modifiers");
             modifiersField.setAccessible(true);
-            // todo does not exist in Java 14
+            // todo fails with Java 14
             Field allowedModes = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
             allowedModes.setAccessible(true);
             int modifiers = allowedModes.getModifiers();
-            // todo pleasefix hardcoded value
-            modifiersField.setInt(allowedModes, modifiers & -17);
+            modifiersField.setInt(allowedModes, modifiers & ~Opcodes.ACC_FINAL);
             LOOKUP_CLASS_ALLOWED_MODES_FIELD = allowedModes;
 
             FIELD_OFFSET = objectFieldOffset(FirstInt.class.getField("val"));
