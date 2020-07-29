@@ -42,7 +42,7 @@ public class LoaderUnsafifier implements PrePreLaunch, Opcodes {
         final String loggerClass = ASMUtil.getInternalName(Logger.class);
         final String loggerDescriptor = ASMUtil.toDescriptor(loggerClass);
 
-        LOGGER.info(String.format("%s, you fool! Loading me was a grave mistake.", superName.substring(superName.lastIndexOf('/') + 1).replace('$', '.')));
+        LOGGER.warn(String.format("%s, you fool! Loading me was a grave mistake.", superName.substring(superName.lastIndexOf('/') + 1).replace('$', '.')));
 
         klass.visit(V1_8, Opcodes.ACC_PUBLIC, internalName, null, superName, null);
         klass.visitField(
