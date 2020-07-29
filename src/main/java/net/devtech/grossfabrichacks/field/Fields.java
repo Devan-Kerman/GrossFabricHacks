@@ -55,7 +55,8 @@ public @interface Fields {
          * long: J<br>
          * float: F<br>
          * double: D<br>
-         * any non-primitive type: L + {@linkplain Type#getInternalName internal name} + ;
+         * any non-array non-primitive type: L + {@linkplain Type#getInternalName internal name} + ;<br>
+         * array: [ + descriptor of component class
          */
         String descriptor();
 
