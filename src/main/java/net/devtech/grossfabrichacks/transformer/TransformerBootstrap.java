@@ -7,7 +7,6 @@ import java.util.function.BiFunction;
 import java.util.logging.Logger;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
-import net.devtech.grossfabrichacks.unsafe.Unsafe;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -173,7 +172,7 @@ public class TransformerBootstrap implements Opcodes {
 			// here, we modify the klass pointer in the object to point towards the HackedMixinTransformer class, effectively turning the existing
 			// MixinTransformer instance into
 			// an instance of HackedMixinTransformer
-			long klass = UnsafeUtil.getKlass(Unsafe.allocateInstance(hacked));
+			long klass = UnsafeUtil.getKlass(UnsafeUtil.allocateInstance(hacked));
 			UnsafeUtil.unsafeCast(mixinTransformer, klass);
 			LOGGER.info("Unsafe casted mixin transformer success!");
 		} catch (Throwable t) {
