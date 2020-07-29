@@ -65,7 +65,7 @@ public class DelegatingInsnList extends InsnList {
         super.add(new InsnNode(opcode));
     }
 
-    public void addIntInsn(final int opcode, final int operand) {
+    public final void addIntInsn(final int opcode, final int operand) {
         super.add(new IntInsnNode(opcode, operand));
     }
 
@@ -73,7 +73,7 @@ public class DelegatingInsnList extends InsnList {
         super.add(new VarInsnNode(opcode, var));
     }
 
-    public void addTypeInsn(final int opcode, final String type) {
+    public final void addTypeInsn(final int opcode, final String type) {
         super.add(new TypeInsnNode(opcode, type));
     }
 
@@ -85,7 +85,7 @@ public class DelegatingInsnList extends InsnList {
         super.add(new MethodInsnNode(opcode, owner, name, descriptor, isInterface));
     }
 
-    public void addInvokeDynamicInsn(final String name, final String descriptor, final Handle bootstrapMethodHandle, final Object... bootstrapMethodArguments) {
+    public final void addInvokeDynamicInsn(final String name, final String descriptor, final Handle bootstrapMethodHandle, final Object... bootstrapMethodArguments) {
         super.add(new InvokeDynamicInsnNode(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments));
     }
 
@@ -97,23 +97,23 @@ public class DelegatingInsnList extends InsnList {
         super.add(getLabelNode(label));
     }
 
-    public void addLdcInsn(final Object value) {
+    public final void addLdcInsn(final Object value) {
         super.add(new LdcInsnNode(value));
     }
 
-    public void addIincInsn(final int var, final int increment) {
+    public final void addIincInsn(final int var, final int increment) {
         super.add(new IincInsnNode(var, increment));
     }
 
-    public void addTableSwitchInsn(final int min, final int max, final Label dflt, final Label... labels) {
+    public final void addTableSwitchInsn(final int min, final int max, final Label dflt, final Label... labels) {
         super.add(new TableSwitchInsnNode(min, max, getLabelNode(dflt), getLabelNodes(labels)));
     }
 
-    public void addLookupSwitchInsn(final Label dflt, final int[] keys, final Label[] labels) {
+    public final void addLookupSwitchInsn(final Label dflt, final int[] keys, final Label[] labels) {
         super.add(new LookupSwitchInsnNode(getLabelNode(dflt), keys, getLabelNodes(labels)));
     }
 
-    public void addMultiANewArrayInsn(final String descriptor, final int numDimensions) {
+    public final void addMultiANewArrayInsn(final String descriptor, final int numDimensions) {
         super.add(new MultiANewArrayInsnNode(descriptor, numDimensions));
     }
 }

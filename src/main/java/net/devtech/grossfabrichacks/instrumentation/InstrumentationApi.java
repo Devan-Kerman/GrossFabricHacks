@@ -25,6 +25,8 @@ public class InstrumentationApi {
     private static final Set<String> TRANSFORMABLE = new HashSet<>();
     private static final Logger LOGGER = Logger.getLogger("InstrumentationApi");
 
+    public static final Instrumentation INSTRUMENTATION;
+
     /**
      * adds a transformer that pipes a class through TransformerBootstrap,
      * this allows you to mix into any all classes (including JDK!) classes, with a few caveats.
@@ -90,6 +92,7 @@ public class InstrumentationApi {
                 if (cls.equals(classBeingRedefined)) {
                     return transformer.transform(className, classfileBuffer);
                 }
+
                 return classfileBuffer;
             };
 
@@ -185,5 +188,7 @@ public class InstrumentationApi {
             LOGGER.severe("error in attaching agent to JVM");
             throw new RuntimeException(e);
         }
+
+        INSTRUMENTATION = getInstrumentation();
     }
 }

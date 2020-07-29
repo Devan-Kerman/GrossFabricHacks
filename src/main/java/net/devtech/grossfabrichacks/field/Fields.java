@@ -29,7 +29,7 @@ public @interface Fields {
          */
         int DEFAULT_ACCESS = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
 
-        String NO_SIGNATURE = "";
+        String NO_SIGNATURE = "NO_SIGNATURE";
 
         /**
          * @return the {@linkplain Opcodes modifiers} of this field,<br>

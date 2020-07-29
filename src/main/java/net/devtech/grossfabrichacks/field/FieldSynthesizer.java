@@ -24,34 +24,9 @@ public class FieldSynthesizer {
         TransformerApi.registerPreMixinAsmClassTransformer(FieldSynthesizer::transform);
 
         LOGGER.info("Initialization complete. Multiple inheritance of state is now at your key presses.");
-        final StatefulImplementation interfase = new StatefulImplementationImpl();
-//        final StatefulInterface test = new StatefulInterface() {};
-
-//        final Class<?> klass = Class.forName(StatefulInterface.class.getName(), true, null);
-
-/*
-        LOGGER.info(interfase.getConsumer());
-        LOGGER.info(interfase.getEnergy());
-        LOGGER.info(interfase.getTest());
-
-        for (int i = 0; i < 10; i++) {
-            final Random random = new Random(i);
-
-            interfase.setConsumer(j -> LOGGER.warn("generic hack" + random.nextLong() * j));
-            interfase.setEnergy(random.nextLong());
-            interfase.setTest(j -> LOGGER.warn("epic native Consumer<Integer> hack" + random.nextLong() * j));
-        }
-
-        LOGGER.info(interfase.getConsumer());
-        LOGGER.info(interfase.getEnergy());
-        LOGGER.info(interfase.getTest());
-
-        interfase.getConsumer().accept(235897);
-        interfase.getTest().accept(918629819);
-*/
     }
 
-    private static void transform(String name, ClassNode klass) {
+    private static void transform(final String name, final ClassNode klass) {
         if (klass.visibleAnnotations != null) {
             for (final AnnotationNode annotation : klass.visibleAnnotations) {
                 if ("Lnet/devtech/grossfabrichacks/field/Fields;".equals(annotation.desc)) {
@@ -74,6 +49,26 @@ public class FieldSynthesizer {
                 }
             }
         }
+    }
+
+    private static void addField(final ClassNode klass, AnnotationNode annotation) {
+        final String name = ASMUtil.getAnnotationValue(annotation, "name");
+        final String signature = ASMUtil.getAnnotationValue(annotation, "signature", Fields.Entry.NO_SIGNATURE);
+
+        for (final FieldNode field : klass.fields) {
+            if (field.name.equals(name)) {
+                throw new RuntimeException(String.format("field %s already exists in %s.", name, klass.name));
+            }
+        }
+
+        //noinspection StringEquality
+        klass.fields.add(new FieldNode(
+                ASMUtil.getAnnotationValue(annotation, "access", Fields.Entry.DEFAULT_ACCESS),
+                name,
+                ASMUtil.getAnnotationValue(annotation, "descriptor"),
+                signature == Fields.Entry.NO_SIGNATURE ? null : signature,
+                null)
+        );
     }
 
     private static void get(final String klass, final MethodNode method, final AnnotationNode annotation) {
@@ -122,12 +117,8 @@ public class FieldSynthesizer {
         }
 
         if (access == Getter.DEFAULT_ACCESS) {
-            if (override) {
-                if (incomplete) {
-                    method.access &= ~ASMUtil.ABSTRACT_ALL;
-                }
-
-                method.access |= Opcodes.ACC_SYNTHETIC;
+            if (override && incomplete) {
+                method.access &= ~ASMUtil.ABSTRACT_ALL;
             }
         } else {
             if (override) {
@@ -138,19 +129,5 @@ public class FieldSynthesizer {
         }
 
         return incomplete;
-    }
-
-    private static void addField(final ClassNode klass, AnnotationNode annotation) {
-        final String name = ASMUtil.getAnnotationValue(annotation, "name");
-        final String signature = ASMUtil.getAnnotationValue(annotation, "signature", Fields.Entry.NO_SIGNATURE);
-
-        for (final FieldNode field : klass.fields) {
-            if (field.name.equals(name)) {
-                throw new RuntimeException(String.format("field %s already exists in %s.", name, klass.name));
-            }
-        }
-
-        //noinspection StringEquality
-        klass.fields.add(new FieldNode(ASMUtil.getAnnotationValue(annotation, "access", Fields.Entry.DEFAULT_ACCESS), name, ASMUtil.getAnnotationValue(annotation, "descriptor"), signature == Fields.Entry.NO_SIGNATURE ? null : signature, null));
     }
 }

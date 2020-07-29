@@ -3,8 +3,6 @@ package net.devtech.grossfabrichacks.unsafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
 /**
@@ -13,18 +11,11 @@ import java.util.logging.Logger;
 public class UnsafeUtil {
     private static final Logger LOGGER = Logger.getLogger("UnsafeUtil");
     // constants
+    public static final boolean x64;
+    public static final int addressFactor;
     private static final Field LOOKUP_CLASS_ALLOWED_MODES_FIELD;
-    public static final Class<?> unsafeClass = getUnsafeClass();
-    public static final String className = unsafeClass.getName();
-    public static final Object UNSAFE;
-    public static final Method getInt = getMethod("getInt", Object.class, long.class);
-    public static final Method getLong = getMethod("getLong", Object.class, long.class);
-    public static final Method getAndSetInt = getMethod("getAndSetInt", Object.class, long.class, int.class);
-    public static final Method getAndAddInt = getMethod("getAndAddInt", Object.class, long.class, int.class);
-    public static final Method getAndSetLong = getMethod("getAndSetLong", Object.class, long.class, long.class);
-    public static final Method objectFieldOffset = getMethod("objectFieldOffset", Field.class);
-    public static final Method allocateInstance = getMethod("allocateInstance", Class.class);
     private static final long FIRST_INT_KLASS;
+    public static final long FIELD_OFFSET;
     public static final long BYTE_ARR_KLASS;
     public static final long SHORT_ARR_KLASS;
     public static final long CHAR_ARR_KLASS;
@@ -108,13 +99,13 @@ public class UnsafeUtil {
      */
     public static <B> B[] arrayCast(Object[] obj, long classKlass) {
         if (EIGHT_BYTE_KLASS) {
-            getAndSetLong(obj, KLASS_OFFSET, classKlass);
+            Unsafe.getAndSetLong(obj, KLASS_OFFSET, classKlass);
         } else {
-            getAndAddInt(obj, KLASS_OFFSET, (int) classKlass);
+            Unsafe.getAndAddInt(obj, KLASS_OFFSET, (int) classKlass);
         }
 
-		//noinspection unchecked
-		return (B[]) obj;
+        //noinspection unchecked
+        return (B[]) obj;
     }
 
     /**
@@ -128,9 +119,9 @@ public class UnsafeUtil {
      */
     public static <B> B unsafeCast(Object object, long klassValue) {
         if (EIGHT_BYTE_KLASS) {
-            getAndSetLong(object, KLASS_OFFSET, klassValue);
+            Unsafe.getAndSetLong(object, KLASS_OFFSET, klassValue);
         } else {
-            getAndSetInt(object, KLASS_OFFSET, (int) (klassValue));
+            Unsafe.getAndSetInt(object, KLASS_OFFSET, (int) (klassValue));
         }
 
         //noinspection unchecked
@@ -144,16 +135,16 @@ public class UnsafeUtil {
      */
     public static long getKlass(Object cls) {
         if (EIGHT_BYTE_KLASS)
-            return getLong(cls, KLASS_OFFSET);
+            return Unsafe.getLong(cls, KLASS_OFFSET);
         else
-            return getInt(cls, KLASS_OFFSET);
+            return Unsafe.getInt(cls, KLASS_OFFSET);
     }
 
     /**
      * get the klass pointer of a class, only works on instantiatable classes
      */
     public static long getKlassFromClass(Class<?> type) {
-        return getKlass(allocateInstance(type));
+        return getKlass(Unsafe.allocateInstance(type));
     }
 
     /**
@@ -164,87 +155,52 @@ public class UnsafeUtil {
     @Deprecated
     public static long getKlassFromClass0(Class<?> type) {
         if (EIGHT_BYTE_KLASS) {
-            return getLong(type, CLASS_KLASS_OFFSET);
+            return Unsafe.getLong(type, CLASS_KLASS_OFFSET);
         }
 
-        return getInt(type, CLASS_KLASS_OFFSET);
+        return Unsafe.getInt(type, CLASS_KLASS_OFFSET);
     }
 
-    private static Class<?> getUnsafeClass() {
-        try {
-            return Class.forName("sun.misc.Unsafe");
-        } catch (final ClassNotFoundException bad) {
-            try {
-                return Class.forName("jdk.internal.misc.Unsafe");
-            } catch (final ClassNotFoundException exception) {
-                throw new RuntimeException(exception);
-            }
-        }
+    public static <T> T getObject(final long address) {
+        final Object[] box = new Object[1];
+        final long baseOffset = Unsafe.arrayBaseOffset(Object[].class);
+
+        Unsafe.putLong(box, baseOffset, address);
+
+        //noinspection unchecked
+        return (T) box[0];
     }
 
-    public static Method getMethod(final String name, final Class<?>... parameterTypes) {
+    public static <T> T getObject(final Object owner, final String fieldName) {
         try {
-            return unsafeClass.getDeclaredMethod(name, parameterTypes);
-        } catch (final NoSuchMethodException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
+            final Field field = owner.getClass().getDeclaredField(fieldName);
 
-    public static int getInt(final Object object, final long offset) {
-        try {
-            return (int) getInt.invoke(UNSAFE, object, offset);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
+            field.setAccessible(true);
 
-    public static long getLong(final Object object, final long offset) {
-        try {
-            return (long) getLong.invoke(UNSAFE, object, offset);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static int getAndSetInt(final Object object, final long offset, final int value) {
-        try {
-            return (int) getAndSetInt.invoke(UNSAFE, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static int getAndAddInt(final Object object, final long offset, final int value) {
-        try {
-            return (int) getAndAddInt.invoke(UNSAFE, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static long getAndSetLong(final Object object, final long offset, final long value) {
-        try {
-            return (long) getAndSetLong.invoke(UNSAFE, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static long objectFieldOffset(final Field field) {
-        try {
-            return (long) objectFieldOffset.invoke(UNSAFE, field);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static <T> T allocateInstance(final Class<?> klass) {
-        try {
             //noinspection unchecked
-            return (T) allocateInstance.invoke(UNSAFE, klass);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
+            return (T) field.get(owner);
+        } catch (final NoSuchFieldException | IllegalAccessException exception) {
             throw new RuntimeException(exception);
         }
+    }
+
+    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass) {
+        return defineClass(binaryName, klass, null);
+    }
+
+    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final ClassLoader loader) {
+        return Unsafe.defineClass(binaryName, klass, 0, klass.length, loader, null);
+    }
+
+    public static long addressOf(final Object object) {
+        return addressOf(0, object);
+    }
+
+    public static long addressOf(final int index, final Object... objects) {
+        final long offset = Unsafe.arrayBaseOffset(objects.getClass());
+        final long scale = Unsafe.arrayIndexScale(objects.getClass());
+
+        return (Unsafe.getInt(objects, offset + index * scale) & 0xFFFFFFFL) * addressFactor;
     }
 
     public static void setAccessible(MethodHandles.Lookup lookup) throws IllegalAccessException {
@@ -255,43 +211,44 @@ public class UnsafeUtil {
         public int val;
     }
 
+
     static {
         LOGGER.info("UnsafeUtil init!");
         try {
-            // unsafe
-            final Field theUnsafe = unsafeClass.getDeclaredField("theUnsafe");
-
-            theUnsafe.setAccessible(true);
-            UNSAFE = theUnsafe.get(null);
-
-            // some random field or something
             // todo does not exist in Java 14
+            // some random field or something
             Field modifiersField = Field.class.getDeclaredField("modifiers");
             modifiersField.setAccessible(true);
+            // todo does not exist in Java 14
             Field allowedModes = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
             allowedModes.setAccessible(true);
             int modifiers = allowedModes.getModifiers();
-            // todo please fix hardcoded value
+            // todo pleasefix hardcoded value
             modifiersField.setInt(allowedModes, modifiers & -17);
             LOOKUP_CLASS_ALLOWED_MODES_FIELD = allowedModes;
 
-            final long offset = (long) objectFieldOffset.invoke(UNSAFE, FirstInt.class.getField("val"));
+            FIELD_OFFSET = Unsafe.objectFieldOffset(FirstInt.class.getField("val"));
 
-            if (offset == 8) { // 32bit jvm
-                KLASS_OFFSET = offset - 4;
+            if (FIELD_OFFSET == 8) { // 32bit jvm
+                x64 = false;
+                KLASS_OFFSET = FIELD_OFFSET - 4;
                 EIGHT_BYTE_KLASS = false;
                 CLASS_KLASS_OFFSET = 80;
-            } else if (offset == 12) { // 64bit jvm with compressed OOPs
-                KLASS_OFFSET = offset - 4;
+            } else if (FIELD_OFFSET == 12) { // 64bit jvm with compressed OOPs
+                x64 = true;
+                KLASS_OFFSET = FIELD_OFFSET - 4;
                 EIGHT_BYTE_KLASS = false;
                 CLASS_KLASS_OFFSET = 84;
-            } else if (offset == 16) { // 64bit jvm
-                KLASS_OFFSET = offset - 8;
+            } else if (FIELD_OFFSET == 16) { // 64bit jvm
+                x64 = true;
+                KLASS_OFFSET = FIELD_OFFSET - 8;
                 EIGHT_BYTE_KLASS = true;
                 CLASS_KLASS_OFFSET = 160;
             } else {
                 throw new UnsupportedOperationException("klass casting not supported!");
             }
+
+            addressFactor = x64 ? 8 : 1;
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

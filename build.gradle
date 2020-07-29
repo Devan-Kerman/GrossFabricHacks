@@ -25,6 +25,9 @@ dependencies {
 
     compileOnly "com.google.code.findbugs:jsr305:+"
     compileOnly "org.jetbrains:annotations:+"
+
+    implementation "org.junit.jupiter:junit-jupiter:+"
+
     // concern
    // extraLibs files("${System.getProperty('java.home')}/../lib/tools.jar")
     // https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy-agent
