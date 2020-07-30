@@ -404,10 +404,10 @@ public class UnsafeUtil {
 
     private static Class<?> getKlass() {
         try {
-            return Class.forName("jdk.internal.misc.Unsafe");
+            return Class.forName("sun.misc.Unsafe");
         } catch (final ClassNotFoundException bad) {
             try {
-                return Class.forName("sun.misc.Unsafe");
+                return Class.forName("jdk.internal.misc.Unsafe");
             } catch (final ClassNotFoundException exception) {
                 throw new RuntimeException(exception);
             }
