@@ -86,7 +86,6 @@ public class InstrumentationApi {
      * @param transformer the class transformer.
      */
     public static void retransform(Class<?> cls, RawClassTransformer transformer) {
-        Instrumentation instrumentation = getInstrumentation();
         try {
             ClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
                 if (cls.equals(classBeingRedefined)) {
@@ -96,9 +95,9 @@ public class InstrumentationApi {
                 return classfileBuffer;
             };
 
-            instrumentation.addTransformer(fileTransformer, true);
-            instrumentation.retransformClasses(cls);
-            instrumentation.removeTransformer(fileTransformer);
+            INSTRUMENTATION.addTransformer(fileTransformer, true);
+            INSTRUMENTATION.retransformClasses(cls);
+            INSTRUMENTATION.removeTransformer(fileTransformer);
         } catch (UnmodifiableClassException e) {
             throw new RuntimeException(e);
         }
