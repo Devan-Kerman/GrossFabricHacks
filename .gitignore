@@ -26,3 +26,4 @@ run
 .idea
 build
 *.iml
+out
