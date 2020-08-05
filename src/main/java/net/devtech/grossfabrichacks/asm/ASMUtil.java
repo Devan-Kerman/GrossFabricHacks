@@ -2,10 +2,10 @@ package net.devtech.grossfabrichacks.asm;
 
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.function.Predicate;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
@@ -590,32 +590,58 @@ public interface ASMUtil extends Opcodes {
         return types;
     }
 
-    static <T> T getAnnotationValue(final AnnotationNode annotation, final String name, final T alternative) {
-        final List<Object> values = annotation.values;
-        final int size = values.size();
+    static <T> T getAnnotationValue(final List<AnnotationNode> annotations, final Class<? extends Annotation> type, final String property, final T alternative) {
+        return getAnnotationValue(annotations, Type.getDescriptor(type), property, alternative);
+    }
+
+    static <T> T getAnnotationValue(final List<AnnotationNode> annotations, final String annotationDescriptor, final String property, final T alternative) {
+        final AnnotationNode[] annotationArray = annotations.toArray(new AnnotationNode[0]);
+        Object[] values;
+
+        for (int i = 0; i < annotationArray.length; i++) {
+            if (annotationDescriptor.equals(annotationArray[i].desc)) {
+                values = annotationArray[i].values.toArray();
+
+                for (int j = 0; j < values.length; j++) {
+                    if (property.equals(values[j])) {
+                        //noinspection unchecked
+                        return (T) values[j + i];
+                    }
+                }
+
+                return alternative;
+            }
+        }
+
+        return null;
+    }
+
+    static <T> T getAnnotationValue(final AnnotationNode annotation, final String property, final T alternative) {
+        final Object[] values = annotation.values.toArray();
+        final int size = values.length;
 
         for (int i = 0; i < size; i += 2) {
-            if (name.equals(values.get(i))) {
+            if (property.equals(values[i])) {
                 //noinspection unchecked
-                return (T) values.get(i + 1);
+                return (T) values[i + 1];
             }
         }
 
         return alternative;
     }
 
-    static <T> T getAnnotationValue(final AnnotationNode annotation, final String name) {
+    static <T> T getAnnotationValue(final AnnotationNode annotation, final String property) {
         final List<Object> values = annotation.values;
         final int size = values.size();
 
         for (int i = 0; i < size; i += 2) {
-            if (name.equals(values.get(i))) {
+            if (property.equals(values.get(i))) {
                 //noinspection unchecked
                 return (T) values.get(i + 1);
             }
         }
 
-        throw new RuntimeException(String.format("cannot find the value of %s in %s", name, annotation));
+        throw new RuntimeException(String.format("cannot find the value of %s in %s", property, annotation));
     }
 
     static Object getDefaultValue(final String descriptor) {
