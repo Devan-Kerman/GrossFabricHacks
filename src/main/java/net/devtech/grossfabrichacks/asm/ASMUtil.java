@@ -492,60 +492,6 @@ public interface ASMUtil extends Opcodes {
         return methods;
     }
 
-    /**
-     * replace all instructions after {@code start}, before and including {@code end} in {@code method} by {@code replacement}
-     *
-     * @param instructions the list in which to replace instructions
-     * @param replacement  the list of instructions that should be inserted
-     * @param start        the instruction after which {@code replacement} should be inserted
-     * @param end          the last instruction that should be removed
-     * @return {@code true} if an insertion point was found; {@code false} otherwise.
-     */
-    static boolean replaceInstructions(final InsnList instructions, final InsnList replacement, final Predicate<AbstractInsnNode> start, final Predicate<AbstractInsnNode> end) {
-        final ListIterator<AbstractInsnNode> iterator = instructions.iterator();
-        AbstractInsnNode instruction;
-
-        while (iterator.hasNext()) {
-            instruction = iterator.next();
-
-            if (end.test(instruction)) {
-                while (!start.test(instruction)) {
-                    iterator.remove();
-                    instruction = iterator.previous();
-                }
-
-                instructions.insert(instruction, replacement);
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * insert
-     *
-     * @param instructions the list of instructions into which to insert {@code insertion}
-     * @param insertion    the list of instructions to insert into {@code instructions}
-     * @param after        the instruction after which to insert {@code insertion}
-     * @return {@code true} if an insertion point was found; {@code false} otherwise
-     */
-    static boolean insert(final InsnList instructions, final InsnList insertion, final Predicate<AbstractInsnNode> after) {
-        final ListIterator<AbstractInsnNode> iterator = instructions.iterator();
-        AbstractInsnNode instruction;
-
-        while (iterator.hasNext()) {
-            if (after.test(instruction = iterator.next())) {
-                instructions.insert(instruction, cloneInstructions(insertion));
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     static List<AbstractInsnNode> getInstructions(final InsnList instructions, final Predicate<AbstractInsnNode> condition) {
         final List<AbstractInsnNode> matchingInstructions = new ReferenceArrayList<>();
 
@@ -556,16 +502,6 @@ public interface ASMUtil extends Opcodes {
         }
 
         return matchingInstructions;
-    }
-
-    static InsnList cloneInstructions(final InsnList instructions) {
-        final InsnList clone = new InsnList();
-
-        for (final AbstractInsnNode instruction : instructions) {
-            clone.add(instruction);
-        }
-
-        return clone;
     }
 
     static List<String> getExplicitParameters(final InvokeDynamicInsnNode instruction) {
