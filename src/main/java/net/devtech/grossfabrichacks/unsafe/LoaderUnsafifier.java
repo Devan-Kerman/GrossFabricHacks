@@ -37,8 +37,5 @@ public class LoaderUnsafifier implements Opcodes {
         LOGGER.warn("{}, you fool! Loading me was a grave mistake.", superName.substring(superName.lastIndexOf('.') + 1).replace('$', '.'));
 
         UNSAFE_LOADER = unsafifyLoader(loader);
-
-//        GFHUnsafeLoader.addClass(LoaderUnsafifier.class.getName(), LoaderUnsafifier.class);
-//        GFHUnsafeLoader.addClass(GrossFabricHacks.class.getName(), GrossFabricHacks.class);
     }
 }
