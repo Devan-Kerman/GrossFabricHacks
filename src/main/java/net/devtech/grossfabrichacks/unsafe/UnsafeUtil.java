@@ -6,14 +6,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
-import java.util.logging.Logger;
+import net.devtech.grossfabrichacks.GrossFabricHacks;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Opcodes;
 
 /**
  * works across all normal JVMs I think
  */
 public class UnsafeUtil {
-    private static final Logger LOGGER = Logger.getLogger("UnsafeUtil");
+    private static final Logger LOGGER = GrossFabricHacks.getLogger("UnsafeUtil");
 
     public static final Class<?> CLASS = getKlass();
     public static final String CLASS_NAME = CLASS.getName();
@@ -111,8 +112,7 @@ public class UnsafeUtil {
      * @param <B>    the desired type of the array
      */
     public static <B> B[] arrayCast(Object[] obj, Class<B> bClass) {
-        //noinspection unchecked
-        return (B[]) arrayCast(obj, getKlass(Array.newInstance(bClass, 0)));
+        return arrayCast(obj, getKlass(Array.newInstance(bClass, 0)));
     }
 
     /**
@@ -161,10 +161,11 @@ public class UnsafeUtil {
      * @param cls an instance of the class to obtain the klass value from
      */
     public static long getKlass(Object cls) {
-        if (EIGHT_BYTE_KLASS)
+        if (EIGHT_BYTE_KLASS) {
             return getLong(cls, KLASS_OFFSET);
-        else
-            return getInt(cls, KLASS_OFFSET);
+        }
+
+        return getInt(cls, KLASS_OFFSET);
     }
 
     /**
@@ -215,11 +216,19 @@ public class UnsafeUtil {
     }
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass) {
-        return defineClass(binaryName, klass, null);
+        return defineClass(binaryName, klass, 0, klass.length, null, null);
     }
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final ClassLoader loader) {
         return defineClass(binaryName, klass, 0, klass.length, loader, null);
+    }
+
+    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final int offset, final int length) {
+        return defineClass(binaryName, klass, offset, length, null, null);
+    }
+
+    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final int offset, final int length, final ClassLoader loader) {
+        return defineClass(binaryName, klass, offset, length, loader, null);
     }
 
     public static long addressOf(final Object object) {
@@ -414,10 +423,27 @@ public class UnsafeUtil {
         }
     }
 
+    public static <T> Class<T> getClass(final String name) {
+        try {
+            //noinspection unchecked
+            return (Class<T>) Class.forName(name);
+        } catch (final ClassNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static <T> Class<T> getClass(final String name, final boolean initialize, final ClassLoader loader) {
+        try {
+            //noinspection unchecked
+            return (Class<T>) Class.forName(name, initialize, loader);
+        } catch (final ClassNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     public static class FirstInt {
         public int val;
     }
-
 
     static {
         LOGGER.info("UnsafeUtil init!");

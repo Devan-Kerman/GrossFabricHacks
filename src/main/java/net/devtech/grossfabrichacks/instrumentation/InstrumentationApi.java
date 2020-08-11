@@ -18,8 +18,7 @@ import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
-
-import static net.devtech.grossfabrichacks.transformer.TransformerBootstrap.transformClass;
+import org.spongepowered.asm.mixin.transformer.HackedMixinTransformer;
 
 public class InstrumentationApi {
     private static final Set<String> TRANSFORMABLE = new HashSet<>();
@@ -130,7 +129,6 @@ public class InstrumentationApi {
 
     // to seperate out the static block
     private static class Transformable {
-        private static final Instrumentation INSTRUMENTATION = InstrumentationApi.getInstrumentation();
         private static boolean init;
         private static final ClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
             ClassReader reader = new ClassReader(classfileBuffer);
@@ -140,7 +138,7 @@ public class InstrumentationApi {
                 if (TRANSFORMABLE.isEmpty()) {
                     deinit();
                 }
-                return transformClass(node);
+                return HackedMixinTransformer.transformClass(node);
             }
             return classfileBuffer;
         };
