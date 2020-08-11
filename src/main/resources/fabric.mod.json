@@ -16,11 +16,6 @@
     "depends": {
         "fabricloader": ">=0.8.9+build.203"
     },
-    "entrypoints": {
-        "gfh:prePreLaunch": [
-            "net.devtech.grossfabrichacks.field.FieldSynthesizer::init"
-        ]
-    },
     "mixins": [
         "grossfabrichacks.mixins.json"
     ]
