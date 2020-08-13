@@ -3,18 +3,19 @@ package net.devtech.grossfabrichacks;
 import java.util.List;
 import java.util.Set;
 import net.devtech.grossfabrichacks.entrypoints.PrePreLaunch;
-import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier;
 import net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils;
+import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
-import user11681.jpp.synthesis.Synthesizer;
 
 public class GrossFabricHacks implements IMixinConfigPlugin {
     public static final String MOD_ID = "GrossFabricHacks";
+
+    public static final UnsafeKnotClassLoader UNSAFE_LOADER = LoaderUnsafifier.unsafifyLoader(Thread.currentThread().getContextClassLoader());
 
     private static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
@@ -47,16 +48,6 @@ public class GrossFabricHacks implements IMixinConfigPlugin {
 
     static {
         LOGGER.error("no good? no, this man is definitely up to evil.");
-
-        LoaderUnsafifier.init();
-
-        try {
-            Class.forName("user11681.jpp.synthesis.Synthesizer");
-
-            TransformerApi.registerPostMixinAsmClassTransformer((final String name, final ClassNode klass) -> Synthesizer.transformNew(klass));
-        } catch (final Throwable throwable) {
-            throwable.printStackTrace();
-        }
 
         EntrypointUtils.invoke("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
     }
