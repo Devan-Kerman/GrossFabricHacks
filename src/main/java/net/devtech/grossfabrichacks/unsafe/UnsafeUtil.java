@@ -2,10 +2,12 @@ package net.devtech.grossfabrichacks.unsafe;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
+import net.devtech.grossfabrichacks.reflection.ReflectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Opcodes;
@@ -21,6 +23,7 @@ public class UnsafeUtil {
     public static final Object theUnsafe = getTheUnsafe();
 
     // constants
+    public static final boolean JAVA_11;
     public static final boolean x64;
     public static final int addressFactor;
     public static final long FIELD_OFFSET;
@@ -52,7 +55,10 @@ public class UnsafeUtil {
     private static final Method allocateMemory = getMethod("allocateMemory", long.class);
     private static final Method copyMemory0 = getMethod("copyMemory", Object.class, long.class, Object.class, long.class, long.class);
     private static final Method copyMemory1 = getMethod("copyMemory", long.class, long.class, long.class);
-    private static final Method defineClass = getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
+    /**
+     * will be null in Java 11 and above
+     */
+    private static final Method defineClass = getDefineClass();
     private static final Method allocateInstance = getMethod("allocateInstance", Class.class);
 
     /**
@@ -215,22 +221,6 @@ public class UnsafeUtil {
         return (T) box[0];
     }
 
-    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass) {
-        return defineClass(binaryName, klass, 0, klass.length, null, null);
-    }
-
-    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final ClassLoader loader) {
-        return defineClass(binaryName, klass, 0, klass.length, loader, null);
-    }
-
-    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final int offset, final int length) {
-        return defineClass(binaryName, klass, offset, length, null, null);
-    }
-
-    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final int offset, final int length, final ClassLoader loader) {
-        return defineClass(binaryName, klass, offset, length, loader, null);
-    }
-
     public static long addressOf(final Object object) {
         return addressOf(0, object);
     }
@@ -253,8 +243,8 @@ public class UnsafeUtil {
      */
     public static Method getMethod(final String name, final Class<?>... parameterTypes) {
         try {
-            return CLASS.getDeclaredMethod(name, parameterTypes);
-        } catch (final NoSuchMethodException exception) {
+            return ReflectionUtil.getDeclaredMethod(CLASS, name, parameterTypes);
+        } catch (final RuntimeException exception) {
             throw new RuntimeException(exception);
         }
     }
@@ -349,11 +339,20 @@ public class UnsafeUtil {
         }
     }
 
-    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final int offset, final int length,
+    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass) {
+        return defineClass(binaryName, klass, null, null);
+    }
+
+    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final ClassLoader loader) {
+        return defineClass(binaryName, klass, loader, null);
+    }
+
+    public static <T> Class<T> defineClass(final String binaryName, final byte[] klass,
                                            final ClassLoader loader, final ProtectionDomain protectionDomain) {
+
         try {
             //noinspection unchecked
-            return (Class<T>) defineClass.invoke(theUnsafe, binaryName, klass, offset, length, loader, protectionDomain);
+            return (Class<T>) defineClass.invoke(theUnsafe, binaryName, klass, 0, klass.length, loader, protectionDomain);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -401,12 +400,12 @@ public class UnsafeUtil {
 
     private static Object getTheUnsafe() {
         try {
-            final Field theField = CLASS.getDeclaredField("theUnsafe");
+            final Constructor<?> theConstructor = CLASS.getDeclaredConstructor();
 
-            theField.setAccessible(true);
+            theConstructor.setAccessible(true);
 
-            return theField.get(null);
-        } catch (final NoSuchFieldException | IllegalAccessException exception) {
+            return theConstructor.newInstance();
+        } catch (final IllegalAccessException | NoSuchMethodException | InstantiationException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
     }
@@ -421,6 +420,18 @@ public class UnsafeUtil {
                 throw new RuntimeException(exception);
             }
         }
+    }
+
+    private static Method getDefineClass() {
+        Method defineClass = null;
+
+        try {
+            defineClass = getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
+        } catch (final RuntimeException gone) {
+//            return ReflectionUtil.getDeclaredMethod("jdk.internal.access.JavaLangAccess", "defineClass", ClassLoader.class, String.class, byte[].class, ProtectionDomain.class, String.class);
+        }
+
+        return defineClass;
     }
 
     public static <T> Class<T> getClass(final String name) {
@@ -445,16 +456,19 @@ public class UnsafeUtil {
         public int val;
     }
 
+
     static {
         LOGGER.info("UnsafeUtil init!");
 
+        final String version = System.getProperty("java.version");
+
+        JAVA_11 = version.indexOf('.') > 1 && Integer.parseInt(version.substring(0, 2)) >= 11;
+
         try {
-            // todo fails with Java 14
             // some random field or something
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            Field modifiersField = ReflectionUtil.getDeclaredField(Field.class, "modifiers");
             modifiersField.setAccessible(true);
-            // todo fails with Java 14
-            Field allowedModes = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
+            Field allowedModes = ReflectionUtil.getDeclaredField(MethodHandles.Lookup.class, "allowedModes");
             allowedModes.setAccessible(true);
             int modifiers = allowedModes.getModifiers();
             modifiersField.setInt(allowedModes, modifiers & ~Opcodes.ACC_FINAL);

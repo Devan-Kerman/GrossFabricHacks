@@ -18,15 +18,15 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     }
 
     public Class<?> defineClass(final String name, final byte[] bytes) {
-        final Class<?> klass = UnsafeUtil.defineClass(name, bytes, 0, bytes.length, null, null);
+        final Class<?> klass = UnsafeUtil.defineClass(name, bytes, null, null);
 
         DEFINED_CLASSES.put(name, klass);
 
         return klass;
     }
 
-    public Class<?> defineClass(final byte[] bytes, final int offset, final int length, final String name) {
-        final Class<?> klass = UnsafeUtil.defineClass(name, bytes, offset, length);
+    public Class<?> defineClass(final byte[] bytes, final String name) {
+        final Class<?> klass = UnsafeUtil.defineClass(name, bytes, null, null);
 
         DEFINED_CLASSES.put(name, klass);
 
