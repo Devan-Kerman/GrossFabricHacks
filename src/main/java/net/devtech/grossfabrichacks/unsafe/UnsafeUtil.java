@@ -6,7 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
-import net.devtech.grossfabrichacks.GrossFabricHacks;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Opcodes;
 
@@ -14,9 +14,9 @@ import org.objectweb.asm.Opcodes;
  * works across all normal JVMs I think
  */
 public class UnsafeUtil {
-    private static final Logger LOGGER = GrossFabricHacks.getLogger("UnsafeUtil");
+    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/UnsafeUtil");
 
-    public static final Class<?> CLASS = getKlass();
+    public static final Class<?> CLASS = getUnsafeClass();
     public static final String CLASS_NAME = CLASS.getName();
     public static final Object theUnsafe = getTheUnsafe();
 
@@ -247,7 +247,7 @@ public class UnsafeUtil {
     }
 
     /**
-     * @param name           get method {@code name} from the Unsafe class returned by {@link #getKlass}
+     * @param name           get method {@code name} from the Unsafe class returned by {@link #getUnsafeClass}
      * @param parameterTypes the parameter types of {@code name}
      * @return the Unsafe method with the specified name and parameter types.
      */
@@ -411,7 +411,7 @@ public class UnsafeUtil {
         }
     }
 
-    private static Class<?> getKlass() {
+    private static Class<?> getUnsafeClass() {
         try {
             return Class.forName("sun.misc.Unsafe");
         } catch (final ClassNotFoundException bad) {
@@ -447,6 +447,7 @@ public class UnsafeUtil {
 
     static {
         LOGGER.info("UnsafeUtil init!");
+
         try {
             // todo fails with Java 14
             // some random field or something
@@ -481,8 +482,8 @@ public class UnsafeUtil {
             }
 
             addressFactor = x64 ? 8 : 1;
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+        } catch (ReflectiveOperationException exception) {
+            throw new RuntimeException(exception);
         }
 
         FIRST_INT_KLASS = getKlass(new FirstInt());

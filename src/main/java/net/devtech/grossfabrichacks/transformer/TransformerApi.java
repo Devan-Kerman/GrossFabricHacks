@@ -2,6 +2,8 @@ package net.devtech.grossfabrichacks.transformer;
 
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
+import org.objectweb.asm.tree.ClassNode;
+import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.transformer.HackedMixinTransformer;
 
 /**
@@ -62,5 +64,11 @@ public class TransformerApi {
 		} else {
 			HackedMixinTransformer.postMixinAsmClassTransformer = HackedMixinTransformer.postMixinAsmClassTransformer.andThen(transformer);
 		}
+	}
+
+	public static byte[] transformClass(final ClassNode node) {
+		MixinEnvironment environment = MixinEnvironment.getCurrentEnvironment();
+
+		return ((HackedMixinTransformer) environment.getActiveTransformer()).transform(environment, node, null);
 	}
 }

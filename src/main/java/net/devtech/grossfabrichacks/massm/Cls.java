@@ -35,11 +35,13 @@ public class Cls {
 
 	public Cls(byte[] array) {
 		this.bytecode = array;
+
 		if (this.readMagic(array)) {
 			this.minor = this.getU2(4);
 			this.major = this.getU2(6);
 			return;
 		}
+
 		throw new IllegalArgumentException("byte array does not start with magic!");
 	}
 
