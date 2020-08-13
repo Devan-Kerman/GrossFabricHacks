@@ -14,12 +14,7 @@
     "icon": "assets/grossfabrichacks/icon.png",
     "environment": "*",
     "depends": {
-        "fabricloader": ">=0.8.9+build.203"
-    },
-    "entrypoints": {
-        "gfh:prePreLaunch": [
-            "net.devtech.grossfabrichacks.field.FieldSynthesizer::init"
-        ]
+        "fabricloader": ">=0.9.1+build.205"
     },
     "mixins": [
         "grossfabrichacks.mixins.json"
