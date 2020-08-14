@@ -1,6 +1,5 @@
 package net.fabricmc.loader.launch.knot;
 
-import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import net.fabricmc.api.EnvType;
@@ -10,8 +9,9 @@ import org.apache.logging.log4j.Logger;
 
 public class UnsafeKnotClassLoader extends KnotClassLoader {
     public static final ConcurrentHashMap<String, Class<?>> DEFINED_CLASSES = new ConcurrentHashMap<>();
+    public static final Class<KnotClassLoader> SUPERCLASS = KnotClassLoader.class;
 
-    private static final Logger LOGGER;
+    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/UnsafeKnotClassLoader");
 
     public UnsafeKnotClassLoader(final boolean isDevelopment, final EnvType envType, final GameProvider provider) {
         super(isDevelopment, envType, provider);
@@ -64,15 +64,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
                     } catch (final ClassFormatError error) {
                         LOGGER.info("Class {} has an illegal format; unsafely defining it.", name);
 
-                        try {
-                            final Field delegate = KnotClassLoader.class.getDeclaredField("delegate");
-
-                            delegate.setAccessible(true);
-
-                            DEFINED_CLASSES.put(name, klass = UnsafeUtil.defineClass(name, ((KnotClassDelegate) delegate.get(this)).getPostMixinClassByteArray(name)));
-                        } catch (final NoSuchFieldException | IllegalAccessException exception) {
-                            throw new RuntimeException(exception);
-                        }
+                        DEFINED_CLASSES.put(name, klass = UnsafeUtil.defineClass(name, (super.getDelegate()).getPostMixinClassByteArray(name)));
                     }
                 }
             }
@@ -92,6 +84,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
                     "net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer",
                     "net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer",
                     "net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader",
+                    "net.fabricmc.loader.launch.knot.KnotClassLoader",
                     "org.spongepowered.asm.mixin.transformer.HackedMixinTransformer"
             };
             final int classCount = classes.length;
@@ -105,7 +98,5 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
         } catch (final Throwable throwable) {
             throw new RuntimeException(throwable);
         }
-
-        LOGGER = LogManager.getLogger("GrossFabricHacks/UnsafeKnotClassLoader");
     }
 }
