@@ -22,7 +22,6 @@
 hs_err_pid*
 
 run
-gradle/wrapper/gradle-wrapper.jar
 .gradle
 .idea
 build
