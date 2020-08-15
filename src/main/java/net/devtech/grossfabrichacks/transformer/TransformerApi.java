@@ -24,6 +24,7 @@ public class TransformerApi {
 	public static void registerPreMixinRawClassTransformer(RawClassTransformer transformer) {
 		if (HackedMixinTransformer.preMixinRawClassTransformer == null) {
 			HackedMixinTransformer.preMixinRawClassTransformer = transformer;
+			HackedMixinTransformer.transformPreMixinRawClass = true;
 		} else {
 			HackedMixinTransformer.preMixinRawClassTransformer = HackedMixinTransformer.preMixinRawClassTransformer.andThen(transformer);
 		}
@@ -33,10 +34,10 @@ public class TransformerApi {
 	 * transformers are called before mixin application with the class' classnode
 	 */
 	public static void registerPreMixinAsmClassTransformer(AsmClassTransformer transformer) {
-		HackedMixinTransformer.shouldWrite = true;
-
 		if (HackedMixinTransformer.preMixinAsmClassTransformer == null) {
 			HackedMixinTransformer.preMixinAsmClassTransformer = transformer;
+			HackedMixinTransformer.transformPreMixinAsmClass = true;
+			HackedMixinTransformer.shouldWrite = true;
 		} else {
 			HackedMixinTransformer.preMixinAsmClassTransformer = HackedMixinTransformer.preMixinAsmClassTransformer.andThen(transformer);
 		}
@@ -46,9 +47,10 @@ public class TransformerApi {
 	 * these are the last transformers to be called, and are fed the output of the classwritten classnode after mixin and postmixinasmtransformers.
 	 */
 	public static void registerPostMixinRawClassTransformer(RawClassTransformer transformer) {
-		HackedMixinTransformer.shouldWrite = true;
 		if (HackedMixinTransformer.postMixinRawClassTransformer == null) {
 			HackedMixinTransformer.postMixinRawClassTransformer = transformer;
+			HackedMixinTransformer.transformPostMixinRawClass = true;
+			HackedMixinTransformer.shouldWrite = true;
 		} else {
 			HackedMixinTransformer.postMixinRawClassTransformer = HackedMixinTransformer.postMixinRawClassTransformer.andThen(transformer);
 		}
@@ -58,9 +60,10 @@ public class TransformerApi {
 	 * transformer is called right after mixin application.
 	 */
 	public static void registerPostMixinAsmClassTransformer(AsmClassTransformer transformer) {
-		HackedMixinTransformer.shouldWrite = true;
 		if (HackedMixinTransformer.postMixinAsmClassTransformer == null) {
 			HackedMixinTransformer.postMixinAsmClassTransformer = transformer;
+			HackedMixinTransformer.transformPostMixinAsmClass = true;
+			HackedMixinTransformer.shouldWrite = true;
 		} else {
 			HackedMixinTransformer.postMixinAsmClassTransformer = HackedMixinTransformer.postMixinAsmClassTransformer.andThen(transformer);
 		}

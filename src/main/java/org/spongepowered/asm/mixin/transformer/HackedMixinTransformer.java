@@ -13,7 +13,12 @@ public class HackedMixinTransformer extends MixinTransformer {
 
     private static final MixinProcessor PROCESSOR;
 
+    // micro-optimization: cache transformer presence
     public static boolean shouldWrite;
+    public static boolean transformPreMixinRawClass;
+    public static boolean transformPreMixinAsmClass;
+    public static boolean transformPostMixinRawClass;
+    public static boolean transformPostMixinAsmClass;
     public static RawClassTransformer preMixinRawClassTransformer;
     public static RawClassTransformer postMixinRawClassTransformer;
     public static AsmClassTransformer preMixinAsmClassTransformer;
@@ -22,7 +27,7 @@ public class HackedMixinTransformer extends MixinTransformer {
     @Override
     public byte[] transformClass(final MixinEnvironment environment, final String name, byte[] classBytes) {
         // raw class patching
-        if (preMixinRawClassTransformer != null) {
+        if (transformPreMixinRawClass) {
             classBytes = preMixinRawClassTransformer.transform(name, classBytes);
         }
 
@@ -33,20 +38,27 @@ public class HackedMixinTransformer extends MixinTransformer {
     public byte[] transform(MixinEnvironment environment, ClassNode classNode, byte[] original) {
         final String name = classNode.name;
 
-        if (preMixinAsmClassTransformer != null) {
-            preMixinAsmClassTransformer.transform(name, classNode);
-        }
+        // return immediately to reduce jumps
+        if (shouldWrite) {
+            if (transformPreMixinAsmClass) {
+                preMixinAsmClassTransformer.transform(name, classNode);
+            }
 
-        if (shouldWrite || PROCESSOR.applyMixins(environment, name.replace('/', '.'), classNode)) {
-            if (postMixinAsmClassTransformer != null) {
+            PROCESSOR.applyMixins(environment, name.replace('/', '.'), classNode);
+
+            if (transformPostMixinAsmClass) {
                 postMixinAsmClassTransformer.transform(name, classNode);
             }
 
             // post mixin raw patching
-            if (postMixinRawClassTransformer != null) {
+            if (transformPostMixinRawClass) {
                 return postMixinRawClassTransformer.transform(name, this.writeClass(classNode));
             }
 
+            return this.writeClass(classNode);
+        }
+
+        if (PROCESSOR.applyMixins(environment, name.replace('/', '.'), classNode)) {
             return this.writeClass(classNode);
         }
 
