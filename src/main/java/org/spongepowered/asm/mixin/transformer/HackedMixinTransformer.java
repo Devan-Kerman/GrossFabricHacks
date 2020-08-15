@@ -38,7 +38,7 @@ public class HackedMixinTransformer extends MixinTransformer {
     public byte[] transform(MixinEnvironment environment, ClassNode classNode, byte[] original) {
         final String name = classNode.name;
 
-        // return immediately to reduce jumps
+        // return immediately to reduce jumps and assignments
         if (shouldWrite) {
             if (transformPreMixinAsmClass) {
                 preMixinAsmClassTransformer.transform(name, classNode);

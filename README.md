@@ -15,6 +15,6 @@ repositories {
 
 dependencies {
     // . . .
-    modImplementation "com.github.devan-kerman:GrossFabricHacks:+"
+    modImplementation "com.github.user11681:GrossFabricHacks:master-SNAPSHOT"
 }
 ```
