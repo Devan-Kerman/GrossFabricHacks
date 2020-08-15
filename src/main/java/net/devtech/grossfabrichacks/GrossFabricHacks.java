@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
-import org.spongepowered.asm.mixin.transformer.HackedMixinTransformer;
 
 public class GrossFabricHacks implements IMixinConfigPlugin {
     public static final String MOD_ID = "GrossFabricHacks";
@@ -51,7 +50,5 @@ public class GrossFabricHacks implements IMixinConfigPlugin {
         LOGGER.error("no good? no, this man is definitely up to evil.");
 
         EntrypointUtils.invoke("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
-
-        HackedMixinTransformer.shouldWrite = true;
     }
 }
