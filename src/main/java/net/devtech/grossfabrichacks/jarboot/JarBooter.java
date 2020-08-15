@@ -7,6 +7,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import net.devtech.grossfabrichacks.GrossFabricHacks;
+import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
 
 public class JarBooter {
 	private static final URLClassLoader DYNAMIC_CLASS_LOADER;
@@ -14,11 +15,11 @@ public class JarBooter {
 
 	static {
 		try {
-			Field urlLoaderField = GrossFabricHacks.class.getClassLoader().getClass().getDeclaredField("urlLoader");
+			Field urlLoaderField = UnsafeKnotClassLoader.SUPERCLASS.getDeclaredField("urlLoader");
 			urlLoaderField.setAccessible(true);
 			ADD_URL = urlLoaderField.getType().getDeclaredMethod("addURL", URL.class);
 			ADD_URL.setAccessible(true);
-			DYNAMIC_CLASS_LOADER = (URLClassLoader) urlLoaderField.get(GrossFabricHacks.class.getClassLoader());
+			DYNAMIC_CLASS_LOADER = (URLClassLoader) urlLoaderField.get(GrossFabricHacks.UNSAFE_LOADER);
 		} catch (Throwable t) {
 			throw new RuntimeException(t);
 		}

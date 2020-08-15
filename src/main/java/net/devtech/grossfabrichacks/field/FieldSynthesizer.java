@@ -16,15 +16,17 @@ import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodNode;
 
 public class FieldSynthesizer {
-    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/FieldSynthesizer");
+    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/FieldHandler");
 
     public static void init() {
-        LOGGER.info("Initializing field synthesis capability.");
-
-        TransformerApi.registerPreMixinAsmClassTransformer(FieldSynthesizer::transform);
-
-        LOGGER.info("Initialization complete. Multiple inheritance of state is now at your key presses.");
-//        final StatefulImplementation interfase = new StatefulImplementationImpl();
+        TransformerApi.registerPreMixinAsmClassTransformer((final String name, final ClassNode klass) -> {
+            try {
+                transform(name, klass);
+            } catch (final Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+        });
+        final StatefulImplementation interfase = new StatefulImplementationImpl();
 //        final StatefulInterface test = new StatefulInterface() {};
 
 //        final Class<?> klass = Class.forName(StatefulInterface.class.getName(), true, null);

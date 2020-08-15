@@ -19,11 +19,11 @@ import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
-import static net.devtech.grossfabrichacks.transformer.TransformerBootstrap.transformClass;
-
 public class InstrumentationApi {
     private static final Set<String> TRANSFORMABLE = new HashSet<>();
     private static final Logger LOGGER = Logger.getLogger("InstrumentationApi");
+
+    public static final Instrumentation INSTRUMENTATION;
 
     /**
      * adds a transformer that pipes a class through TransformerBootstrap,
@@ -84,18 +84,18 @@ public class InstrumentationApi {
      * @param transformer the class transformer.
      */
     public static void retransform(Class<?> cls, RawClassTransformer transformer) {
-        Instrumentation instrumentation = getInstrumentation();
         try {
             ClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
                 if (cls.equals(classBeingRedefined)) {
                     return transformer.transform(className, classfileBuffer);
                 }
+
                 return classfileBuffer;
             };
 
-            instrumentation.addTransformer(fileTransformer, true);
-            instrumentation.retransformClasses(cls);
-            instrumentation.removeTransformer(fileTransformer);
+            INSTRUMENTATION.addTransformer(fileTransformer, true);
+            INSTRUMENTATION.retransformClasses(cls);
+            INSTRUMENTATION.removeTransformer(fileTransformer);
         } catch (UnmodifiableClassException e) {
             throw new RuntimeException(e);
         }
@@ -128,25 +128,22 @@ public class InstrumentationApi {
 
     // to seperate out the static block
     private static class Transformable {
-        private static final Instrumentation INSTRUMENTATION = InstrumentationApi.getInstrumentation();
         private static boolean init;
         private static final ClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
             ClassReader reader = new ClassReader(classfileBuffer);
             ClassNode node = new ClassNode();
             reader.accept(node, 0);
+
             if (TRANSFORMABLE.remove(node.name)) {
                 if (TRANSFORMABLE.isEmpty()) {
                     deinit();
                 }
-                return transformClass(node);
+
+                return TransformerApi.transformClass(node);
             }
+
             return classfileBuffer;
         };
-
-        static {
-            // pipe transformer to
-            TransformerApi.manualLoad();
-        }
 
         private static void deinit() {
             INSTRUMENTATION.removeTransformer(TRANSFORMER);
@@ -158,6 +155,11 @@ public class InstrumentationApi {
                 INSTRUMENTATION.addTransformer(TRANSFORMER);
                 init = true;
             }
+        }
+
+        static {
+            // pipe transformer to
+            TransformerApi.manualLoad();
         }
     }
 
@@ -185,5 +187,7 @@ public class InstrumentationApi {
             LOGGER.severe("error in attaching agent to JVM");
             throw new RuntimeException(e);
         }
+
+        INSTRUMENTATION = getInstrumentation();
     }
 }
