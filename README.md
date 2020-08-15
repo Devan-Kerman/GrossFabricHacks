@@ -7,12 +7,14 @@ How to use
 
 ```groovy
 repositories {
+    // . . .
 	maven {
 		url "https://jitpack.io"
 	}
 }
 
 dependencies {
-    modImplementation "com.github.devan-kerman:grossfabrichacks:+"
+    // . . .
+    modImplementation "com.github.devan-kerman:GrossFabricHacks:+"
 }
 ```
