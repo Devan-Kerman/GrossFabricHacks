@@ -18,14 +18,13 @@ public class GFHLanguageAdapter implements LanguageAdapter {
     static {
         LOGGER.error("no good? no, this man is definitely up to evil.");
 
+        final ReferenceArrayList<PrePrePreLaunch> entrypoints = ReferenceArrayList.wrap(new PrePrePreLaunch[0], 0);
         final ModContainer[] mods = FabricLoader.getInstance().getAllMods().toArray(new ModContainer[0]);
         final int modCount = mods.length;
-        EntrypointMetadata[] modEntrypoints;
-
-        final ReferenceArrayList<PrePrePreLaunch> entrypoints = ReferenceArrayList.wrap(new PrePrePreLaunch[0], 0);
         int i;
         int j;
         int entrypointCount;
+        EntrypointMetadata[] modEntrypoints;
 
         for (i = 0; i < modCount; i++) {
             modEntrypoints = mods[i].getInfo().getEntrypoints("gfh:prePrePreLaunch").toArray(new EntrypointMetadata[0]);
