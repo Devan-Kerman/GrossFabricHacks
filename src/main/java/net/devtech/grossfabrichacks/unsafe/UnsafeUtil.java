@@ -23,7 +23,8 @@ public class UnsafeUtil {
     public static final Object theUnsafe = getTheUnsafe();
 
     // constants
-    public static final boolean JAVA_11;
+    public static final boolean JAVA_11 = isVersion(11);
+    public static final boolean JAVA_9 = isVersion(9);
     public static final boolean x64;
     public static final int addressFactor;
     public static final long FIELD_OFFSET;
@@ -63,6 +64,12 @@ public class UnsafeUtil {
      */
     private static final Method defineClass = getDefineClass();
     private static final Method allocateInstance = getMethod("allocateInstance", Class.class);
+
+    public static boolean isVersion(final int version) {
+        final String string = System.getProperty("java.version");
+
+        return string.indexOf('.') > 1 ? Integer.parseUnsignedInt(string.substring(0, 2)) >= version : Integer.parseUnsignedInt(string.substring(2, 3)) >= version;
+    }
 
     /**
      * set the first 4 bytes of an object to something, this can be used to mutate the size of an array
@@ -486,14 +493,12 @@ public class UnsafeUtil {
     static {
         LOGGER.info("UnsafeUtil init!");
 
-        final String version = System.getProperty("java.version");
-
-        JAVA_11 = version.indexOf('.') > 1 && Integer.parseInt(version.substring(0, 2)) >= 11;
-
         try {
-            final Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            if (JAVA_9) {
+                final Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
 
-            putObjectVolatile(loggerClass, staticFieldOffset(loggerClass.getDeclaredField("logger")), null);
+                putObjectVolatile(loggerClass, staticFieldOffset(loggerClass.getDeclaredField("logger")), null);
+            }
 
             Field allowedModes = ReflectionUtil.getDeclaredField(MethodHandles.Lookup.class, "allowedModes");
             ReflectionUtil.getDeclaredField(Field.class, "modifiers").setInt(allowedModes, allowedModes.getModifiers() & ~Opcodes.ACC_FINAL);
