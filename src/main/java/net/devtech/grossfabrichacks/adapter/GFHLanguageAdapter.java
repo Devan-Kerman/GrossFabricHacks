@@ -28,11 +28,11 @@ public class GFHLanguageAdapter implements LanguageAdapter {
                     if (prePrePreLaunchValue.getType() == CustomValue.CvType.ARRAY) {
                         for (final CustomValue element : prePrePreLaunchValue.getAsArray()) {
                             if (tryLoadClass(mods[i], element)) {
-                                throw new IllegalArgumentException(String.format("a non-string value was found in the gfh:prePrePreLaunch array in the Fabric configuration file of mod %s", mods[i].getMetadata().getName()));
+                                throw new IllegalArgumentException(String.format("a non-string value was found in the gfh:prePrePreLaunch array of mod %s", mods[i].getMetadata().getName()));
                             }
                         }
                     } else {
-                        throw new IllegalArgumentException(String.format("the value of gfh:prePrePreLaunch in the Fabric configuration file of mod %s is not a binary class name or an array of binary class names", mods[i].getMetadata().getName()));
+                        throw new IllegalArgumentException(String.format("the value of gfh:prePrePreLaunch of mod %s is not a binary class name or an array of binary class names", mods[i].getMetadata().getName()));
                     }
                 }
             }
@@ -44,7 +44,7 @@ public class GFHLanguageAdapter implements LanguageAdapter {
             try {
                 Class.forName(value.getAsString(), true, GFHLanguageAdapter.class.getClassLoader());
             } catch (final ClassNotFoundException exception) {
-                throw new IllegalArgumentException(String.format("class %s specified in the Fabric configuration file of mod %s does not exist", value.getAsString(), mod.getMetadata().getName()));
+                throw new IllegalArgumentException(String.format("class %s specified in the gfh:prePrePreLaunch value of mod %s does not exist", value.getAsString(), mod.getMetadata().getName()));
             }
 
             return false;
