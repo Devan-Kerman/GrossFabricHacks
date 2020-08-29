@@ -5,7 +5,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-
 import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
 

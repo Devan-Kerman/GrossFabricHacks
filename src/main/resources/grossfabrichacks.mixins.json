@@ -2,5 +2,5 @@
     "required": true,
     "package": "net.devtech.grossfabrichacks.mixin",
     "compatibilityLevel": "JAVA_8",
-    "plugin": "net.devtech.grossfabrichacks.GrossFabricHacks"
+    "plugin": "net.devtech.grossfabrichacks.mixin.GrossFabricHacksPlugin"
 }
