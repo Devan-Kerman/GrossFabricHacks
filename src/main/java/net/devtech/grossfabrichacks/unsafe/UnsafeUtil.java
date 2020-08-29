@@ -1,16 +1,13 @@
 package net.devtech.grossfabrichacks.unsafe;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
-import net.devtech.grossfabrichacks.reflection.ReflectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.objectweb.asm.Opcodes;
 
 /**
  * works across all normal JVMs I think
@@ -40,7 +37,6 @@ public class UnsafeUtil {
     public static final long CLASS_KLASS_OFFSET;
 
     private static final long FIRST_INT_KLASS;
-    private static final Field LOOKUP_CLASS_ALLOWED_MODES_FIELD;
 
     private static final Method getInt = getMethod("getInt", Object.class, long.class);
     private static final Method getLong = getMethod("getLong", Object.class, long.class);
@@ -227,7 +223,6 @@ public class UnsafeUtil {
 
         putLong(box, baseOffset, address);
 
-        //noinspection unchecked
         return (T) box[0];
     }
 
@@ -240,10 +235,6 @@ public class UnsafeUtil {
         final long scale = arrayIndexScale(objects.getClass());
 
         return (getInt(objects, offset + index * scale) & 0xFFFFFFFL) * addressFactor;
-    }
-
-    public static void setAccessible(MethodHandles.Lookup lookup) throws IllegalAccessException {
-        LOOKUP_CLASS_ALLOWED_MODES_FIELD.setInt(lookup, 15);
     }
 
     /**
@@ -499,10 +490,6 @@ public class UnsafeUtil {
 
                 putObjectVolatile(loggerClass, staticFieldOffset(loggerClass.getDeclaredField("logger")), null);
             }
-
-            Field allowedModes = ReflectionUtil.getDeclaredField(MethodHandles.Lookup.class, "allowedModes");
-            ReflectionUtil.getDeclaredField(Field.class, "modifiers").setInt(allowedModes, allowedModes.getModifiers() & ~Opcodes.ACC_FINAL);
-            LOOKUP_CLASS_ALLOWED_MODES_FIELD = allowedModes;
 
             FIELD_OFFSET = objectFieldOffset(FirstInt.class.getField("val"));
 
