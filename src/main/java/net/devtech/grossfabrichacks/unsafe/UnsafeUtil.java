@@ -493,10 +493,6 @@ public class UnsafeUtil {
 
         try {
             if (ReflectionUtil.JAVA_9) {
-                final Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
-
-                putObjectVolatile(loggerClass, staticFieldOffset(loggerClass.getDeclaredField("logger")), null);
-
                 defineClass = null;
                 defineClassHandle = getDefineClassHandle();
                 javaLangAccess = ReflectionUtil.invoke(ReflectionUtil.getDeclaredMethod("jdk.internal.access.SharedSecrets", "getJavaLangAccess"), null);
