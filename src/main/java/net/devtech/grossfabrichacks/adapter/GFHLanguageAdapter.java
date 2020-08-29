@@ -12,7 +12,7 @@ public class GFHLanguageAdapter implements LanguageAdapter {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks");
 
     @Override
-    public native <T> T create(final ModContainer mod, final String value, final Class<T> type);
+    public native <T> T create(ModContainer mod, String value, Class<T> type);
 
     static {
         LOGGER.error("no good? no, this man is definitely up to evil.");
