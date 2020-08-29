@@ -3,7 +3,6 @@ package net.devtech.grossfabrichacks;
 import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
-import net.devtech.grossfabrichacks.reflection.ReflectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,7 +10,7 @@ public class Debug {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/test");
 
     public static void printFields(final Class<?> klass, final Object object) {
-        Arrays.stream(ReflectionUtil.getDeclaredFields0(klass)).forEach(field -> {
+        Arrays.stream(klass.getDeclaredFields()).forEach(field -> {
             try {
                 final Object value = field.get(object);
                 final String message = String.format("%s = %s", field, value != null && value.getClass().isArray() ? Arrays.deepToString((Object[]) value) : value);
