@@ -11,7 +11,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public class AccessAllower {
-    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/Java9🅱️ix");
+    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/AccessAllower (Java9🅱️ix v2)");
 
     public static void init() {
         LOGGER.info("this is more concerning than Fabric Zero");
