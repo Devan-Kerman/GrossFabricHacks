@@ -8,7 +8,15 @@ import org.objectweb.asm.Opcodes;
 public class ReflectionUtil {
     private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader();
 
-    private static final Method getDeclaredFields0 = getDeclaredMethod(Class.class, "getDeclaredFields0", boolean.class);
+    private static final String JAVA_LANG_MODULE = "java.lang.Module";
+    private static final String JAVA_LANG_STRING = "java.lang.String";
+
+    private static final Method getDeclaredFields0;
+
+    private static Method addExports;
+    private static Method getModule;
+    private static Method implAddExportsOrOpens;
+
 
     public static <T> T getDeclaredFieldValue(final String klass, final String name, final Object object) {
         try {
@@ -70,18 +78,18 @@ public class ReflectionUtil {
     }
 
     public static Field[] getDeclaredFields0(final Class<?> klass) {
-        try {
-            final Field[] fields = (Field[]) getDeclaredFields0.invoke(klass, false);
-            final int fieldCount = fields.length;
+        final Field[] fields = invoke(getDeclaredFields0, klass, false);
+        final int fieldCount = fields.length;
 
-            for (int i = 0; i < fieldCount; i++) {
-                fields[i].setAccessible(true);
-            }
-
-            return fields;
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
+        for (int i = 0; i < fieldCount; i++) {
+            fields[i].setAccessible(true);
         }
+
+        return fields;
+    }
+
+    public static Method getDeclaredMethod(final String klass, final String name) {
+        return getDeclaredMethod(klass, name, new Class[0]);
     }
 
     public static Method getDeclaredMethod(final String klass, final String name, final String... parameterTypes) {
@@ -117,5 +125,55 @@ public class ReflectionUtil {
         } catch (final NoSuchMethodException exception) {
             throw new RuntimeException(exception);
         }
+    }
+
+    public static <T> T invoke(final Method method, final Object object, final Object... arguments) {
+        try {
+            return (T) method.invoke(object, arguments);
+        } catch (final IllegalAccessException | InvocationTargetException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static <T> Class<T> forName(final String name, final boolean initialize, final ClassLoader loader) {
+        try {
+            return (Class<T>) Class.forName(name, initialize, loader);
+        } catch (final ClassNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static <T> Class<T> forName(final String name) {
+        try {
+            return (Class<T>) Class.forName(name);
+        } catch (final ClassNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static Object getModule(final Class<?> klass) {
+        if (getModule == null) {
+            getModule = getDeclaredMethod("java.lang.Class", "getModule");
+        }
+
+        return invoke(getModule, klass);
+    }
+
+    public static Object addExports(final Object module, final String packageName, final Object other) {
+        if (addExports == null) {
+            addExports = getDeclaredMethod(JAVA_LANG_MODULE, "addExports", JAVA_LANG_STRING, JAVA_LANG_MODULE);
+        }
+
+        return invoke(addExports, module, packageName, other);
+    }
+
+    public static void implAddExportsOrOpens(final Object module, final String pn, final Object other, final boolean open, final boolean syncVM) {
+        if (implAddExportsOrOpens == null) {
+            implAddExportsOrOpens = getDeclaredMethod(JAVA_LANG_MODULE, "implAddExportsOrOpens", forName(JAVA_LANG_STRING), forName(JAVA_LANG_MODULE), boolean.class, boolean.class);
+        }
+    }
+
+    static {
+        getDeclaredFields0 = getDeclaredMethod(Class.class, "getDeclaredFields0", boolean.class);
     }
 }

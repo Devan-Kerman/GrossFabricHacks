@@ -20,6 +20,6 @@
         "grossfabrichacks.mixins.json"
     ],
     "languageAdapters": {
-        "gfh": "net.devtech.grossfabrichacks.adapter.GFHLanguageAdapter"
+        "gfh": "net.devtech.grossfabrichacks.GrossFabricHacks"
     }
 }

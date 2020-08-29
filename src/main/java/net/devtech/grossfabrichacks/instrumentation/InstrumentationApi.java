@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
-import net.devtech.grossfabrichacks.GrossFabricHacks;
+import net.devtech.grossfabrichacks.mixin.GrossFabricHacksPlugin;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
@@ -115,7 +115,7 @@ public class InstrumentationApi {
     }
 
     private static void unpack(File file) throws IOException {
-        try (InputStream stream = GrossFabricHacks.class.getResourceAsStream("/jars/gross_agent.jar")) {
+        try (InputStream stream = GrossFabricHacksPlugin.class.getResourceAsStream("/jars/gross_agent.jar")) {
             try (FileOutputStream out = new FileOutputStream(file)) {
                 byte[] arr = new byte[2048];
                 int len;
