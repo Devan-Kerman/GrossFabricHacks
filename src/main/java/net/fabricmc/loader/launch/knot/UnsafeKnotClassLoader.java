@@ -88,7 +88,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
             final ClassLoader knotClassLoader = Thread.currentThread().getContextClassLoader();
             final Class<? extends ClassLoader> knotClassLoaderClass = knotClassLoader.getClass();
             final String loaderUnsafifierName = "net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier";
-            final Method forName = Class.forName(loaderUnsafifierName, false, knotClassLoader).getMethod("forName", String.class, ClassLoader.class);
+            final Method forName = Class.forName(loaderUnsafifierName, false, knotClassLoader).getMethod("findAndDefineClass", String.class, ClassLoader.class);
 
             DEFINED_CLASSES.put(knotClassLoaderClass.getName(), knotClassLoaderClass);
             DEFINED_CLASSES.put(thisClass.getName(), thisClass);

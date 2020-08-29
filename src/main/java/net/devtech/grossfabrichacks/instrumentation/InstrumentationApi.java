@@ -4,24 +4,24 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.management.ManagementFactory;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
-import net.devtech.grossfabrichacks.GrossFabricHacks;
+import net.devtech.grossfabrichacks.mixin.GrossFabricHacksPlugin;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 public class InstrumentationApi {
     private static final Set<String> TRANSFORMABLE = new HashSet<>();
-    private static final Logger LOGGER = Logger.getLogger("InstrumentationApi");
+    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/InstrumentationApi");
 
     public static final Instrumentation INSTRUMENTATION;
 
@@ -85,7 +85,7 @@ public class InstrumentationApi {
      */
     public static void retransform(Class<?> cls, RawClassTransformer transformer) {
         try {
-            ClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+            GFHClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
                 if (cls.equals(classBeingRedefined)) {
                     return transformer.transform(className, classfileBuffer);
                 }
@@ -115,7 +115,7 @@ public class InstrumentationApi {
     }
 
     private static void unpack(File file) throws IOException {
-        try (InputStream stream = GrossFabricHacks.class.getResourceAsStream("/jars/gross_agent.jar")) {
+        try (InputStream stream = GrossFabricHacksPlugin.class.getResourceAsStream("/jars/gross_agent.jar")) {
             try (FileOutputStream out = new FileOutputStream(file)) {
                 byte[] arr = new byte[2048];
                 int len;
@@ -129,7 +129,7 @@ public class InstrumentationApi {
     // to seperate out the static block
     private static class Transformable {
         private static boolean init;
-        private static final ClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+        private static final GFHClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
             ClassReader reader = new ClassReader(classfileBuffer);
             ClassNode node = new ClassNode();
             reader.accept(node, 0);
@@ -184,7 +184,7 @@ public class InstrumentationApi {
             LOGGER.info("Attaching to VM");
             ByteBuddyAgent.attach(grossJar, pid);
         } catch (Throwable e) {
-            LOGGER.severe("error in attaching agent to JVM");
+            LOGGER.error("error in attaching agent to JVM");
             throw new RuntimeException(e);
         }
 

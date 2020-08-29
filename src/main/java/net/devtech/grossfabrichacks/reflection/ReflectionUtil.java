@@ -8,7 +8,14 @@ import org.objectweb.asm.Opcodes;
 public class ReflectionUtil {
     private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader();
 
-    private static final Method getDeclaredFields0 = getDeclaredMethod(Class.class, "getDeclaredFields0", boolean.class);
+    public static final boolean JAVA_11 = isVersion(11);
+    public static final boolean JAVA_9 = isVersion(9);
+
+    public static boolean isVersion(final int version) {
+        final String string = System.getProperty("java.version");
+
+        return string.indexOf('.') > 1 ? Integer.parseUnsignedInt(string.substring(0, 2)) >= version : Integer.parseUnsignedInt(string.substring(2, 3)) >= version;
+    }
 
     public static <T> T getDeclaredFieldValue(final String klass, final String name, final Object object) {
         try {
@@ -35,53 +42,23 @@ public class ReflectionUtil {
     }
 
     public static Field getDeclaredField(final Class<?> klass, final String name) {
-        final Field[] fields = getDeclaredFields0(klass);
-        final int fieldCount = fields.length;
-
-        for (int i = 0; i < fieldCount; i++) {
-            if (fields[i].getName().equals(name)) {
-                final Field field = fields[i];
-
-                field.setAccessible(true);
-
-                if ((field.getModifiers() & Opcodes.ACC_STATIC) != 0) {
-                    final Field modifiers = getDeclaredField(Field.class, "modifiers");
-
-                    try {
-                        modifiers.setInt(field, field.getModifiers() & ~Opcodes.ACC_STATIC);
-                    } catch (final IllegalAccessException exception) {
-                        throw new RuntimeException(exception);
-                    }
-                }
-
-                return field;
-            }
-        }
-
-        throw new RuntimeException(String.format("field %s was not found in %s", name, klass.getName()));
-    }
-
-    public static Field[] getDeclaredFields0(final String klass) {
         try {
-            return getDeclaredFields0(Class.forName(klass, false, LOADER));
-        } catch (final ClassNotFoundException exception) {
+            final Field field = klass.getDeclaredField(name);
+
+            if ((field.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                final Field modifiers = getDeclaredField(Field.class, "modifiers");
+
+                modifiers.setInt(field, field.getModifiers() & ~Opcodes.ACC_STATIC);
+            }
+
+            return field;
+        } catch (final IllegalAccessException | NoSuchFieldException exception) {
             throw new RuntimeException(exception);
         }
     }
 
-    public static Field[] getDeclaredFields0(final Class<?> klass) {
-        try {
-            final Field[] fields = (Field[]) getDeclaredFields0.invoke(klass, false);
-            final int fieldCount = fields.length;
-
-            for (int i = 0; i < fieldCount; i++) {
-                fields[i].setAccessible(true);
-            }
-
-            return fields;
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
+    public static Method getDeclaredMethod(final String klass, final String name) {
+        return getDeclaredMethod(klass, name, new Class[0]);
     }
 
     public static Method getDeclaredMethod(final String klass, final String name, final String... parameterTypes) {
@@ -115,6 +92,18 @@ public class ReflectionUtil {
 
             return method;
         } catch (final NoSuchMethodException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static <T> T invoke(final Method method, final Object object) {
+        return invoke(method, object, new Object[0]);
+    }
+
+    public static <T> T invoke(final Method method, final Object object, final Object... arguments) {
+        try {
+            return (T) method.invoke(object, arguments);
+        } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
     }

@@ -1,6 +1,8 @@
 package net.devtech.grossfabrichacks.unsafe;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -10,7 +12,6 @@ import java.security.ProtectionDomain;
 import net.devtech.grossfabrichacks.reflection.ReflectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.objectweb.asm.Opcodes;
 
 /**
  * works across all normal JVMs I think
@@ -22,8 +23,11 @@ public class UnsafeUtil {
     public static final String CLASS_NAME = CLASS.getName();
     public static final Object theUnsafe = getTheUnsafe();
 
+    public static final Object javaLangAccess;
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
     // constants
-    public static final boolean JAVA_11;
     public static final boolean x64;
     public static final int addressFactor;
     public static final long FIELD_OFFSET;
@@ -39,7 +43,6 @@ public class UnsafeUtil {
     public static final long CLASS_KLASS_OFFSET;
 
     private static final long FIRST_INT_KLASS;
-    private static final Field LOOKUP_CLASS_ALLOWED_MODES_FIELD;
 
     private static final Method getInt = getMethod("getInt", Object.class, long.class);
     private static final Method getLong = getMethod("getLong", Object.class, long.class);
@@ -49,17 +52,21 @@ public class UnsafeUtil {
     private static final Method getAndSetLong = getMethod("getAndSetLong", Object.class, long.class, long.class);
     private static final Method putInt = getMethod("putInt", Object.class, long.class, int.class);
     private static final Method putLong = getMethod("putLong", Object.class, long.class, long.class);
+    private static final Method putObject = getMethod("putObject", Object.class, long.class, Object.class);
+    private static final Method putObjectVolatile = getMethod("putObjectVolatile", Object.class, long.class, Object.class);
     private static final Method objectFieldOffset = getMethod("objectFieldOffset", Field.class);
+    private static final Method staticFieldOffset = getMethod("staticFieldOffset", Field.class);
     private static final Method arrayBaseOffset = getMethod("arrayBaseOffset", Class.class);
     private static final Method arrayIndexScale = getMethod("arrayIndexScale", Class.class);
     private static final Method allocateMemory = getMethod("allocateMemory", long.class);
     private static final Method copyMemory0 = getMethod("copyMemory", Object.class, long.class, Object.class, long.class, long.class);
     private static final Method copyMemory1 = getMethod("copyMemory", long.class, long.class, long.class);
-    /**
-     * will be null in Java 11 and above
-     */
-    private static final Method defineClass = getDefineClass();
     private static final Method allocateInstance = getMethod("allocateInstance", Class.class);
+    private static final Method defineClass;
+    private static final MethodHandle defineClassHandle;
+
+
+    static {}
 
     /**
      * set the first 4 bytes of an object to something, this can be used to mutate the size of an array
@@ -217,7 +224,6 @@ public class UnsafeUtil {
 
         putLong(box, baseOffset, address);
 
-        //noinspection unchecked
         return (T) box[0];
     }
 
@@ -232,10 +238,6 @@ public class UnsafeUtil {
         return (getInt(objects, offset + index * scale) & 0xFFFFFFFL) * addressFactor;
     }
 
-    public static void setAccessible(MethodHandles.Lookup lookup) throws IllegalAccessException {
-        LOOKUP_CLASS_ALLOWED_MODES_FIELD.setInt(lookup, 15);
-    }
-
     /**
      * @param name           get method {@code name} from the Unsafe class returned by {@link #getUnsafeClass}
      * @param parameterTypes the parameter types of {@code name}
@@ -243,8 +245,12 @@ public class UnsafeUtil {
      */
     public static Method getMethod(final String name, final Class<?>... parameterTypes) {
         try {
-            return ReflectionUtil.getDeclaredMethod(CLASS, name, parameterTypes);
-        } catch (final RuntimeException exception) {
+            final Method method = CLASS.getDeclaredMethod(name, parameterTypes);
+
+            method.setAccessible(true);
+
+            return method;
+        } catch (final NoSuchMethodException exception) {
             throw new RuntimeException(exception);
         }
     }
@@ -322,6 +328,22 @@ public class UnsafeUtil {
         }
     }
 
+    public static void putObject(final Object owner, final long offset, final Object value) {
+        try {
+            putObject.invoke(theUnsafe, owner, offset, value);
+        } catch (final IllegalAccessException | InvocationTargetException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static void putObjectVolatile(final Object owner, final long offset, final Object value) {
+        try {
+            putObjectVolatile.invoke(theUnsafe, owner, offset, value);
+        } catch (final IllegalAccessException | InvocationTargetException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     public static long objectFieldOffset(final Field field) {
         try {
             return (long) objectFieldOffset.invoke(theUnsafe, field);
@@ -330,9 +352,16 @@ public class UnsafeUtil {
         }
     }
 
+    public static long staticFieldOffset(final Field field) {
+        try {
+            return (long) staticFieldOffset.invoke(theUnsafe, field);
+        } catch (final IllegalAccessException | InvocationTargetException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     public static <T> T allocateInstance(final Class<?> klass) {
         try {
-            //noinspection unchecked
             return (T) allocateInstance.invoke(theUnsafe, klass);
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
@@ -349,11 +378,12 @@ public class UnsafeUtil {
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass,
                                            final ClassLoader loader, final ProtectionDomain protectionDomain) {
-
         try {
-            //noinspection unchecked
-            return (Class<T>) defineClass.invoke(theUnsafe, binaryName, klass, 0, klass.length, loader, protectionDomain);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
+            return (ReflectionUtil.JAVA_11
+                ? (Class<T>) defineClassHandle.invoke(javaLangAccess, loader, binaryName, klass, protectionDomain, null)
+                : (Class<T>) defineClass.invoke(theUnsafe, binaryName, klass, 0, klass.length, loader, protectionDomain)
+            );
+        } catch (final Throwable exception) {
             throw new RuntimeException(exception);
         }
     }
@@ -423,20 +453,23 @@ public class UnsafeUtil {
     }
 
     private static Method getDefineClass() {
-        Method defineClass = null;
-
         try {
-            defineClass = getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
+            return getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
         } catch (final RuntimeException gone) {
-//            return ReflectionUtil.getDeclaredMethod("jdk.internal.access.JavaLangAccess", "defineClass", ClassLoader.class, String.class, byte[].class, ProtectionDomain.class, String.class);
+            throw new RuntimeException(gone);
         }
+    }
 
-        return defineClass;
+    private static MethodHandle getDefineClassHandle() {
+        try {
+            return LOOKUP.findVirtual(Class.forName("jdk.internal.access.JavaLangAccess"), "defineClass", MethodType.methodType(Class.class, ClassLoader.class, String.class, byte[].class, ProtectionDomain.class, String.class));
+        } catch (final NoSuchMethodException | IllegalAccessException | ClassNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     public static <T> Class<T> getClass(final String name) {
         try {
-            //noinspection unchecked
             return (Class<T>) Class.forName(name);
         } catch (final ClassNotFoundException exception) {
             throw new RuntimeException(exception);
@@ -445,7 +478,6 @@ public class UnsafeUtil {
 
     public static <T> Class<T> getClass(final String name, final boolean initialize, final ClassLoader loader) {
         try {
-            //noinspection unchecked
             return (Class<T>) Class.forName(name, initialize, loader);
         } catch (final ClassNotFoundException exception) {
             throw new RuntimeException(exception);
@@ -456,23 +488,23 @@ public class UnsafeUtil {
         public int val;
     }
 
-
     static {
         LOGGER.info("UnsafeUtil init!");
 
-        final String version = System.getProperty("java.version");
-
-        JAVA_11 = version.indexOf('.') > 1 && Integer.parseInt(version.substring(0, 2)) >= 11;
-
         try {
-            // some random field or something
-            Field modifiersField = ReflectionUtil.getDeclaredField(Field.class, "modifiers");
-            modifiersField.setAccessible(true);
-            Field allowedModes = ReflectionUtil.getDeclaredField(MethodHandles.Lookup.class, "allowedModes");
-            allowedModes.setAccessible(true);
-            int modifiers = allowedModes.getModifiers();
-            modifiersField.setInt(allowedModes, modifiers & ~Opcodes.ACC_FINAL);
-            LOOKUP_CLASS_ALLOWED_MODES_FIELD = allowedModes;
+            if (ReflectionUtil.JAVA_9) {
+                final Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
+
+                putObjectVolatile(loggerClass, staticFieldOffset(loggerClass.getDeclaredField("logger")), null);
+
+                defineClass = null;
+                defineClassHandle = getDefineClassHandle();
+                javaLangAccess = ReflectionUtil.invoke(ReflectionUtil.getDeclaredMethod("jdk.internal.access.SharedSecrets", "getJavaLangAccess"), null);
+            } else {
+                defineClass = getDefineClass();
+                defineClassHandle = null;
+                javaLangAccess = null;
+            }
 
             FIELD_OFFSET = objectFieldOffset(FirstInt.class.getField("val"));
 
