@@ -3,6 +3,7 @@ package net.devtech.grossfabrichacks;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import java.lang.reflect.InvocationTargetException;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
+import net.devtech.grossfabrichacks.reflection.AccessAllower;
 import net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier;
 import net.fabricmc.loader.ModContainer;
 import net.fabricmc.loader.api.FabricLoader;
@@ -21,14 +22,11 @@ public class GrossFabricHacks implements LanguageAdapter {
     public native <T> T create(net.fabricmc.loader.api.ModContainer mod, String value, Class<T> type);
 
     static {
-        try {
-            Class.forName("net.devtech.grossfabrichacks.unsafe.UnsafeUtil");
-        } catch (final ClassNotFoundException exception) {
-            throw new RuntimeException(exception);
-        }
+        LOGGER.error("no good? no, this man is definitely up to evil.");
+
+        AccessAllower.init();
 
         UNSAFE_LOADER = LoaderUnsafifier.unsafifyLoader(Thread.currentThread().getContextClassLoader());
-        LOGGER.error("no good? no, this man is definitely up to evil.");
 
         final ReferenceArrayList<PrePrePreLaunch> entrypoints = ReferenceArrayList.wrap(new PrePrePreLaunch[0], 0);
         final ModContainer[] mods = FabricLoader.getInstance().getAllMods().toArray(new ModContainer[0]);

@@ -15,12 +15,13 @@ import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 public class InstrumentationApi {
     private static final Set<String> TRANSFORMABLE = new HashSet<>();
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger("InstrumentationApi");
+    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/InstrumentationApi");
 
     public static final Instrumentation INSTRUMENTATION;
 
