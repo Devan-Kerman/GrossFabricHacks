@@ -1,6 +1,7 @@
 package net.devtech.grossfabrichacks;
 
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import java.lang.reflect.InvocationTargetException;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
 import net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier;
 import net.fabricmc.loader.ModContainer;
@@ -42,11 +43,17 @@ public class GrossFabricHacks implements LanguageAdapter {
 
             for (j = 0, entrypointCount = modEntrypoints.length; j < entrypointCount; j++) {
                 try {
-                    entrypoints.add((PrePrePreLaunch) Class.forName(modEntrypoints[j].getValue(), true, GrossFabricHacks.class.getClassLoader()).newInstance());
+                    final Class<?> klass = Class.forName(modEntrypoints[j].getValue());
+
+                    if (PrePrePreLaunch.class.isAssignableFrom(klass)) {
+                        entrypoints.add((PrePrePreLaunch) klass.getConstructor().newInstance());
+                    }
                 } catch (final ClassNotFoundException exception) {
                     throw new IllegalArgumentException(String.format("class %s specified in the gfh:prePrePreLaunch entrypoint of mod %s does not exist", modEntrypoints[j].getValue(), mods[i].getMetadata().getName()), exception);
-                } catch (final IllegalAccessException | InstantiationException exception) {
+                } catch (final IllegalAccessException | InstantiationException | NoSuchMethodException exception) {
                     throw new IllegalStateException(String.format("class %s specified in the gfh:prePrePreLaunch entrypoint of mod %s cannot be instantiated", modEntrypoints[j].getValue(), mods[i].getMetadata().getName()), exception);
+                } catch (final InvocationTargetException exception) {
+                    throw new RuntimeException(String.format("an error was encountered during the execution of the gfh:prePrePreLaunch entrypoint of class %s", modEntrypoints[j].getValue()));
                 }
             }
         }
