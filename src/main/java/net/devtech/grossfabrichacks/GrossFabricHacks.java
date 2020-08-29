@@ -42,7 +42,7 @@ public class GrossFabricHacks implements IMixinConfigPlugin {
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
 
     static {
-        final EntrypointContainer<PrePreLaunch>[] entrypoints = FabricLoader.getInstance().getEntrypointContainers("gfh:prePrePreLaunch", PrePreLaunch.class).toArray(new EntrypointContainer[0]);
+        final EntrypointContainer<PrePreLaunch>[] entrypoints = FabricLoader.getInstance().getEntrypointContainers("gfh:prePreLaunch", PrePreLaunch.class).toArray(new EntrypointContainer[0]);
         final int entrypointCount = entrypoints.length;
 
         for (int i = 0; i < entrypointCount; i++) {
