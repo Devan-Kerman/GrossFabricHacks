@@ -4,22 +4,35 @@ import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import java.lang.reflect.InvocationTargetException;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
 import net.devtech.grossfabrichacks.reflection.AccessAllower;
+import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier;
 import net.fabricmc.loader.ModContainer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.LanguageAdapter;
+import net.fabricmc.loader.launch.knot.UnloadableClassLoader;
 import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
 import net.fabricmc.loader.metadata.EntrypointMetadata;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.objectweb.asm.tree.ClassNode;
 
 public class GrossFabricHacks implements LanguageAdapter {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks");
 
+    public static final String INTERNAL_NAME = "net/devtech/grossfabrichacks/GrossFabricHacks";
+
     public static final UnsafeKnotClassLoader UNSAFE_LOADER;
+
+    public static boolean mixinLoaded;
 
     @Override
     public native <T> T create(net.fabricmc.loader.api.ModContainer mod, String value, Class<T> type);
+
+    private static void transform(String name, ClassNode klass) {
+        int thing = 1;
+
+        System.out.println(thing);
+    }
 
     static {
         LOGGER.error("no good? no, this man is definitely up to evil.");
@@ -27,6 +40,10 @@ public class GrossFabricHacks implements LanguageAdapter {
         AccessAllower.init();
 
         UNSAFE_LOADER = LoaderUnsafifier.unsafifyLoader(Thread.currentThread().getContextClassLoader());
+
+        UnloadableClassLoader.UNLOADABLE_CLASSES.put("net/minecraft/client/MinecraftClient", null);
+
+        TransformerApi.registerPostMixinAsmClassTransformer(GrossFabricHacks::transform);
 
         final ReferenceArrayList<PrePrePreLaunch> entrypoints = ReferenceArrayList.wrap(new PrePrePreLaunch[0], 0);
         final ModContainer[] mods = FabricLoader.getInstance().getAllMods().toArray(new ModContainer[0]);
