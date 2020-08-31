@@ -91,15 +91,17 @@ public class UnloadableClassLoader extends UnsafeKnotClassLoader {
         }
     }
 
-    public static void retransform(final String name, final RawClassTransformer transformer) {
+    public static Class<?> retransform(final String name, final RawClassTransformer transformer) {
         final UnloadableClassLoader loader = new UnloadableClassLoader(name, transformer.transform(name, UNLOADABLE_CLASSES.get(name).bytecode));
 
         unload(name);
 
         UNLOADABLE_CLASSES.put(name, loader);
+
+        return loader.klass;
     }
 
-    public static void retransform(final String name, final AsmClassTransformer transformer) {
+    public static Class<?> retransform(final String name, final AsmClassTransformer transformer) {
         final ClassNode node;
         transformer.transform(name, node = UNLOADABLE_CLASSES.get(name).classNode);
         final UnloadableClassLoader loader = new UnloadableClassLoader(name, node);
@@ -107,18 +109,22 @@ public class UnloadableClassLoader extends UnsafeKnotClassLoader {
         unload(name);
 
         UNLOADABLE_CLASSES.put(name, loader);
+
+        return loader.klass;
     }
 
-    public static void retransform(final Class<?> klass, final RawClassTransformer transformer) {
+    public static Class<?> retransform(final Class<?> klass, final RawClassTransformer transformer) {
         final String name = klass.getName();
         final UnloadableClassLoader loader = new UnloadableClassLoader(name, transformer.transform(name, UNLOADABLE_CLASSES.get(name).bytecode));
 
         unload(name);
 
         UNLOADABLE_CLASSES.put(name, loader);
+
+        return loader.klass;
     }
 
-    public static void retransform(final Class<?> klass, final AsmClassTransformer transformer) {
+    public static Class<?> retransform(final Class<?> klass, final AsmClassTransformer transformer) {
         final String name = klass.getName();
         final ClassNode node;
         transformer.transform(name, node = UNLOADABLE_CLASSES.get(name).classNode);
@@ -127,5 +133,7 @@ public class UnloadableClassLoader extends UnsafeKnotClassLoader {
         unload(name);
 
         UNLOADABLE_CLASSES.put(name, loader);
+
+        return loader.klass;
     }
 }

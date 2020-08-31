@@ -1,13 +1,11 @@
 package net.devtech.grossfabrichacks.unsafe;
 
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
 
 public class LoaderUnsafifier implements Opcodes {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/LoaderUnsafifier");
@@ -24,13 +22,10 @@ public class LoaderUnsafifier implements Opcodes {
 
     public static <T> Class<T> findAndDefineClass(final String binaryName, final ClassLoader loader) {
         try {
-            final ClassReader reader = new ClassReader(LoaderUnsafifier.class.getClassLoader().getResourceAsStream(binaryName.replace('.', '/') + ".class"));
-            final ClassNode node = new ClassNode();
-            final ClassWriter writer = new ClassWriter(0);
-            reader.accept(node, 0);
-            node.accept(writer);
+            final InputStream stream = LoaderUnsafifier.class.getClassLoader().getResourceAsStream(binaryName.replace('.', '/') + ".class");
+            final byte[] bytecode = new byte[stream.available()];
 
-            final byte[] bytecode = writer.toByteArray();
+            while (stream.read(bytecode) != -1);
 
             return (Class<T>) defineClass.invoke(
                 loader,
