@@ -11,6 +11,11 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
+/**
+ * a class loader that is inteded to be used for only a single class<br>
+ * so that it and its defined class may be garbage collected when desired,<br>
+ * allowing more than just method bodies to be redefined.
+ */
 public class UnloadableClassLoader extends UnsafeKnotClassLoader {
     public static final Object2ReferenceOpenHashMap<String, UnloadableClassLoader> UNLOADABLE_CLASSES = new Object2ReferenceOpenHashMap<>(0, 0.75F);
 
@@ -21,7 +26,6 @@ public class UnloadableClassLoader extends UnsafeKnotClassLoader {
 
     public UnloadableClassLoader(final String name) {
         super(DEVELOPMENT, ENVIRONMENT, PROVIDER);
-
 
         final byte[] bytecode = this.getDelegate().getPostMixinClassByteArray(name);
         final ClassReader reader = new ClassReader(bytecode);
@@ -40,7 +44,7 @@ public class UnloadableClassLoader extends UnsafeKnotClassLoader {
 
         this.name = name;
         this.classNode = node;
-        this.klass = UnsafeUtil.defineClass(name, this.bytecode = writer.toByteArray());
+        UnsafeKnotClassLoader.UNSAFE_CLASSES.put(name, this.klass = UnsafeUtil.defineClass(name, this.bytecode = writer.toByteArray()));
     }
 
     public UnloadableClassLoader(final String name, final byte[] bytecode) {

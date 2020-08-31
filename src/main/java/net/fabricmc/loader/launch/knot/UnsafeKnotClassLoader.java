@@ -69,9 +69,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
                             UNSAFE_CLASSES.put(name, klass = UnsafeUtil.defineClass(name, DELEGATE.getPostMixinClassByteArray(name)));
                         }
                     } else {
-                        final UnloadableClassLoader loader = UnloadableClassLoader.UNLOADABLE_CLASSES.get(name);
-
-                        klass = loader != null ? loader.klass : UnloadableClassLoader.define(name);
+                        klass = UnloadableClassLoader.UNLOADABLE_CLASSES.get(name).klass;
                     }
                 }
             }
@@ -92,7 +90,6 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
 
             UNSAFE_CLASSES.put(knotClassLoaderClass.getName(), knotClassLoaderClass);
             UNSAFE_CLASSES.put(thisClass.getName(), thisClass);
-
 
             final ClassLoader applicationLoader = thisClass.getClassLoader();
             final String loaderUnsafifierName = "net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier";
