@@ -85,7 +85,7 @@ public class InstrumentationApi {
      */
     public static void retransform(Class<?> cls, RawClassTransformer transformer) {
         try {
-            GFHClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+            CompatibleClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
                 if (cls.equals(classBeingRedefined)) {
                     return transformer.transform(className, classfileBuffer);
                 }
@@ -129,7 +129,7 @@ public class InstrumentationApi {
     // to seperate out the static block
     private static class Transformable {
         private static boolean init;
-        private static final GFHClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+        private static final CompatibleClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
             ClassReader reader = new ClassReader(classfileBuffer);
             ClassNode node = new ClassNode();
             reader.accept(node, 0);

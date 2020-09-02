@@ -44,7 +44,7 @@ public class UnloadableClassLoader extends UnsafeKnotClassLoader {
 
         this.name = name;
         this.classNode = node;
-        UnsafeKnotClassLoader.UNSAFE_CLASSES.put(name, this.klass = UnsafeUtil.defineClass(name, this.bytecode = writer.toByteArray()));
+        UnsafeKnotClassLoader.DEFINED_CLASSES.put(name, this.klass = UnsafeUtil.defineClass(name, this.bytecode = writer.toByteArray()));
     }
 
     public UnloadableClassLoader(final String name, final byte[] bytecode) {
@@ -83,6 +83,8 @@ public class UnloadableClassLoader extends UnsafeKnotClassLoader {
 
     public static void unload(final String name) {
         final UnloadableClassLoader loader = UNLOADABLE_CLASSES.remove(name);
+
+        UnsafeKnotClassLoader.DEFINED_CLASSES.remove(name);
 
         try {
             KnotClassDelegate.class.getDeclaredField("itf").set(loader.getDelegate(), null);

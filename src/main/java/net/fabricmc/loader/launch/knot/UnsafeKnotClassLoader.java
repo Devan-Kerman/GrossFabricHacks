@@ -1,7 +1,7 @@
 package net.fabricmc.loader.launch.knot;
 
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentHashMap;
 import net.devtech.grossfabrichacks.reflection.ReflectionUtil;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import net.fabricmc.api.EnvType;
@@ -11,7 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class UnsafeKnotClassLoader extends KnotClassLoader {
-    public static final ConcurrentHashMap<String, Class<?>> UNSAFE_CLASSES = new ConcurrentHashMap<>();
+    public static final Object2ReferenceOpenHashMap<String, Class<?>> DEFINED_CLASSES = new Object2ReferenceOpenHashMap<>();
     public static final Class<KnotClassLoader> SUPERCLASS = KnotClassLoader.class;
     public static final String INTERNAL_NAME = "net/fabricmc/loader/launch/knot/UnsafeKnotClassLoader";
 
@@ -29,7 +29,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     public Class<?> defineClass(final String name, final byte[] bytes) {
         final Class<?> klass = UnsafeUtil.defineClass(name, bytes, null, null);
 
-        UNSAFE_CLASSES.put(name, klass);
+        DEFINED_CLASSES.put(name, klass);
 
         return klass;
     }
@@ -38,7 +38,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
         final Class<?> klass = super.findLoadedClass(name);
 
         if (klass == null) {
-            return UNSAFE_CLASSES.get(name);
+            return DEFINED_CLASSES.get(name);
         }
 
         return klass;
@@ -47,7 +47,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     @Override
     public boolean isClassLoaded(final String name) {
         synchronized (super.getClassLoadingLock(name)) {
-            return super.findLoadedClass(name) != null || UNSAFE_CLASSES.get(name) != null;
+            return super.findLoadedClass(name) != null || DEFINED_CLASSES.get(name) != null;
         }
     }
 
@@ -57,20 +57,20 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
             Class<?> klass = super.findLoadedClass(name);
 
             if (klass == null) {
-                klass = UNSAFE_CLASSES.get(name);
+                klass = DEFINED_CLASSES.get(name);
 
                 if (klass == null) {
-                    if (!UnloadableClassLoader.UNLOADABLE_CLASSES.containsKey(name)) {
+//                    if (!UnloadableClassLoader.UNLOADABLE_CLASSES.containsKey(name)) {
                         try {
                             return super.loadClass(name, resolve);
                         } catch (final ClassFormatError error) {
                             LOGGER.info("Class {} has an illegal format; unsafely defining it.", name);
 
-                            UNSAFE_CLASSES.put(name, klass = UnsafeUtil.defineClass(name, DELEGATE.getPostMixinClassByteArray(name)));
+                            DEFINED_CLASSES.put(name, klass = UnsafeUtil.defineClass(name, DELEGATE.getPostMixinClassByteArray(name)));
                         }
-                    } else {
-                        klass = UnloadableClassLoader.UNLOADABLE_CLASSES.get(name).klass;
-                    }
+//                    } else {
+//                        klass = UnloadableClassLoader.UNLOADABLE_CLASSES.get(name).klass;
+//                    }
                 }
             }
 
@@ -88,8 +88,8 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
             final ClassLoader knotClassLoader = Thread.currentThread().getContextClassLoader();
             final Class<? extends ClassLoader> knotClassLoaderClass = knotClassLoader.getClass();
 
-            UNSAFE_CLASSES.put(knotClassLoaderClass.getName(), knotClassLoaderClass);
-            UNSAFE_CLASSES.put(thisClass.getName(), thisClass);
+            DEFINED_CLASSES.put(knotClassLoaderClass.getName(), knotClassLoaderClass);
+            DEFINED_CLASSES.put(thisClass.getName(), thisClass);
 
             final ClassLoader applicationLoader = thisClass.getClassLoader();
             final String loaderUnsafifierName = "net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier";
@@ -103,7 +103,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
             final int classCount = names.length;
 
             for (int i = 0; i < classCount; i++) {
-                UNSAFE_CLASSES.put(names[i], (Class<?>) forName.invoke(null, names[i], applicationLoader));
+                DEFINED_CLASSES.put(names[i], (Class<?>) forName.invoke(null, names[i], applicationLoader));
             }
 
             final FabricLoader fabricLoader = FabricLoader.getInstance();

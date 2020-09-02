@@ -33,6 +33,14 @@ public class ReflectionUtil {
         }
     }
 
+    public static <T> T getDeclaredFieldValue(final Class<?> klass, final String name) {
+        try {
+            return (T) getDeclaredField(klass, name).get(null);
+        } catch (IllegalAccessException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     public static Field getDeclaredField(final String klass, final String name) {
         try {
             return getDeclaredField(Class.forName(klass, false, LOADER), name);

@@ -1,20 +1,23 @@
 package net.devtech.grossfabrichacks;
 
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.InvocationTargetException;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
 import net.devtech.grossfabrichacks.reflection.AccessAllower;
-import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier;
 import net.fabricmc.loader.ModContainer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.LanguageAdapter;
-import net.fabricmc.loader.launch.knot.UnloadableClassLoader;
 import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
 import net.fabricmc.loader.metadata.EntrypointMetadata;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 public class GrossFabricHacks implements LanguageAdapter {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks");
@@ -28,10 +31,29 @@ public class GrossFabricHacks implements LanguageAdapter {
     @Override
     public native <T> T create(net.fabricmc.loader.api.ModContainer mod, String value, Class<T> type);
 
-    private static void transform(String name, ClassNode klass) {
-        int thing = 1;
+    private static void loadSimpleMethodHandle() {
+        try {
+            final String internalName = "net/devtech/grossfabrichacks/reflection/SimpleMethodHandle";
+            final ClassReader reader = new ClassReader(GrossFabricHacks.class.getClassLoader().getResourceAsStream(internalName + ".class"));
+            final ClassNode klass = new ClassNode();
+            reader.accept(klass, 0);
 
-        System.out.println(thing);
+            final MethodNode[] methods = klass.methods.toArray(new MethodNode[0]);
+
+            for (final MethodNode method : methods) {
+                if (method.desc.equals("([Ljava/lang/Object;)Ljava/lang/Object;")) {
+                    method.access &= ~Opcodes.ACC_NATIVE;
+
+                    method.visitVarInsn(Opcodes.ALOAD, 0);
+                    method.visitFieldInsn(Opcodes.GETFIELD, internalName, "delegate", Type.getDescriptor(MethodHandle.class));
+                    method.visitVarInsn(Opcodes.ALOAD, 1);
+                    method.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(MethodHandle.class), "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;", false);
+                    method.visitInsn(Opcodes.ARETURN);
+                }
+            }
+        } catch (final Throwable exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     static {
@@ -40,10 +62,6 @@ public class GrossFabricHacks implements LanguageAdapter {
         AccessAllower.init();
 
         UNSAFE_LOADER = LoaderUnsafifier.unsafifyLoader(Thread.currentThread().getContextClassLoader());
-
-        UnloadableClassLoader.UNLOADABLE_CLASSES.put("net/minecraft/client/MinecraftClient", null);
-
-        TransformerApi.registerPostMixinAsmClassTransformer(GrossFabricHacks::transform);
 
         final ReferenceArrayList<PrePrePreLaunch> entrypoints = ReferenceArrayList.wrap(new PrePrePreLaunch[0], 0);
         final ModContainer[] mods = FabricLoader.getInstance().getAllMods().toArray(new ModContainer[0]);
