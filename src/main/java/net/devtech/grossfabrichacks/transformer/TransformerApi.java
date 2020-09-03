@@ -80,7 +80,7 @@ public class TransformerApi {
 	}
 
 	static {
-		if (GFHState.mixinLoaded) {
+		if (GFHState.AppClassLoaded.mixinLoaded) {
 			manualLoad();
 		}
 	}

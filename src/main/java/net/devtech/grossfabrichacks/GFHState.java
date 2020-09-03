@@ -4,8 +4,6 @@ import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 
 public class GFHState {
-    public static boolean mixinLoaded;
-
     public static boolean shouldWrite;
     // micro-optimization: cache transformer presence
     public static boolean transformPreMixinRawClass;
@@ -16,4 +14,8 @@ public class GFHState {
     public static RawClassTransformer postMixinRawClassTransformer;
     public static AsmClassTransformer preMixinAsmClassTransformer;
     public static AsmClassTransformer postMixinAsmClassTransformer;
+
+    public static class AppClassLoaded {
+        public static boolean mixinLoaded;
+    }
 }

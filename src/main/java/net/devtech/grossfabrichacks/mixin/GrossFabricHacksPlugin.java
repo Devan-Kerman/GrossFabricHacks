@@ -39,7 +39,7 @@ public class GrossFabricHacksPlugin implements IMixinConfigPlugin {
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
 
     static {
-        GFHState.mixinLoaded = true;
+        GFHState.AppClassLoaded.mixinLoaded = true;
 
         SmartEntrypoints.executeOptionalEntrypoint("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
 
