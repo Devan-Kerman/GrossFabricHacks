@@ -6,11 +6,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.MixinEnvironment;
+import org.spongepowered.asm.mixin.transformer.ext.Extensions;
 
 public class HackedMixinTransformer extends MixinTransformer {
-    public static final HackedMixinTransformer INSTANCE;
+    public static final Class<MixinTransformer> superclass = MixinTransformer.class;
 
-    private static final MixinProcessor PROCESSOR;
+    public static final HackedMixinTransformer instance;
+    public static final MixinProcessor processor;
+    public static final Extensions extensions;
 
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/HackedMixinTransformer");
 
@@ -34,7 +37,7 @@ public class HackedMixinTransformer extends MixinTransformer {
                 GrossFabricHacks.State.preMixinAsmClassTransformer.transform(name, classNode);
             }
 
-            PROCESSOR.applyMixins(environment, name.replace('/', '.'), classNode);
+            processor.applyMixins(environment, name.replace('/', '.'), classNode);
 
             if (GrossFabricHacks.State.transformPostMixinAsmClass) {
                 GrossFabricHacks.State.postMixinAsmClassTransformer.transform(name, classNode);
@@ -48,7 +51,7 @@ public class HackedMixinTransformer extends MixinTransformer {
             return this.writeClass(classNode);
         }
 
-        if (PROCESSOR.applyMixins(environment, name.replace('/', '.'), classNode)) {
+        if (processor.applyMixins(environment, name.replace('/', '.'), classNode)) {
             return this.writeClass(classNode);
         }
 
@@ -67,8 +70,9 @@ public class HackedMixinTransformer extends MixinTransformer {
 
             LOGGER.info("Unsafe cast mixin transformer success!");
 
-            INSTANCE = (HackedMixinTransformer) mixinTransformer;
-            PROCESSOR = (MixinProcessor) Class.forName("org.spongepowered.asm.mixin.transformer.MixinTransformer").getDeclaredField("processor").get(mixinTransformer);
+            instance = (HackedMixinTransformer) mixinTransformer;
+            processor = (MixinProcessor) Class.forName("org.spongepowered.asm.mixin.transformer.MixinTransformer").getDeclaredField("processor").get(mixinTransformer);
+            extensions = (Extensions) superclass.getDeclaredField("extensions").get(mixinTransformer);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

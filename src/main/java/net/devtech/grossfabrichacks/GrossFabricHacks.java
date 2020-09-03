@@ -22,8 +22,6 @@ import user11681.smartentrypoints.SmartEntrypoints;
 public class GrossFabricHacks implements LanguageAdapter {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks");
 
-    public static final String INTERNAL_NAME = "net/devtech/grossfabrichacks/GrossFabricHacks";
-
     public static final UnsafeKnotClassLoader UNSAFE_LOADER;
 
     @Override

@@ -74,7 +74,7 @@ public class TransformerApi {
 	}
 
 	public static byte[] transformClass(final ClassNode node) {
-		return HackedMixinTransformer.INSTANCE.transform(MixinEnvironment.getCurrentEnvironment(), node, null);
+		return HackedMixinTransformer.instance.transform(MixinEnvironment.getCurrentEnvironment(), node, null);
 	}
 
 	static {
