@@ -11,7 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class UnsafeKnotClassLoader extends KnotClassLoader {
-    public static final Object2ReferenceOpenHashMap<String, Class<?>> DEFINED_CLASSES = new Object2ReferenceOpenHashMap<>();
+    public static final Object2ReferenceOpenHashMap<String, Class<?>> CLASSES = new Object2ReferenceOpenHashMap<>();
     public static final Class<KnotClassLoader> SUPERCLASS = KnotClassLoader.class;
     public static final String INTERNAL_NAME = "net/fabricmc/loader/launch/knot/UnsafeKnotClassLoader";
 
@@ -29,7 +29,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     public Class<?> defineClass(final String name, final byte[] bytes) {
         final Class<?> klass = UnsafeUtil.defineClass(name, bytes, null, null);
 
-        DEFINED_CLASSES.put(name, klass);
+        CLASSES.put(name, klass);
 
         return klass;
     }
@@ -38,7 +38,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
         final Class<?> klass = super.findLoadedClass(name);
 
         if (klass == null) {
-            return DEFINED_CLASSES.get(name);
+            return CLASSES.get(name);
         }
 
         return klass;
@@ -47,31 +47,29 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     @Override
     public boolean isClassLoaded(final String name) {
         synchronized (super.getClassLoadingLock(name)) {
-            return super.findLoadedClass(name) != null || DEFINED_CLASSES.get(name) != null;
+            return super.findLoadedClass(name) != null || CLASSES.get(name) != null;
         }
     }
 
     @Override
     public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
         synchronized (super.getClassLoadingLock(name)) {
-            Class<?> klass = super.findLoadedClass(name);
+            Class<?> klass = CLASSES.get(name);
 
             if (klass == null) {
-                klass = DEFINED_CLASSES.get(name);
+                klass = super.findLoadedClass(name);
 
                 if (klass == null) {
-//                    if (!UnloadableClassLoader.UNLOADABLE_CLASSES.containsKey(name)) {
-                        try {
-                            return super.loadClass(name, resolve);
-                        } catch (final ClassFormatError error) {
-                            LOGGER.info("Class {} has an illegal format; unsafely defining it.", name);
+                    try {
+                        CLASSES.put(name, klass = super.loadClass(name, resolve));
 
-                            DEFINED_CLASSES.put(name, klass = UnsafeUtil.defineClass(name, DELEGATE.getPostMixinClassByteArray(name)));
-                        }
-//                    } else {
-//                        klass = UnloadableClassLoader.UNLOADABLE_CLASSES.get(name).klass;
-//                    }
+                        return klass;
+                    } catch (final ClassFormatError formatError) {
+                        klass = UnsafeUtil.defineClass(name, DELEGATE.getPostMixinClassByteArray(name));
+                    }
                 }
+
+                CLASSES.put(name, klass);
             }
 
             if (resolve) {
@@ -88,8 +86,8 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
             final ClassLoader knotClassLoader = Thread.currentThread().getContextClassLoader();
             final Class<? extends ClassLoader> knotClassLoaderClass = knotClassLoader.getClass();
 
-            DEFINED_CLASSES.put(knotClassLoaderClass.getName(), knotClassLoaderClass);
-            DEFINED_CLASSES.put(thisClass.getName(), thisClass);
+            CLASSES.put(knotClassLoaderClass.getName(), knotClassLoaderClass);
+            CLASSES.put(thisClass.getName(), thisClass);
 
             final ClassLoader applicationLoader = thisClass.getClassLoader();
             final String loaderUnsafifierName = "net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier";
@@ -103,7 +101,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
             final int classCount = names.length;
 
             for (int i = 0; i < classCount; i++) {
-                DEFINED_CLASSES.put(names[i], (Class<?>) forName.invoke(null, names[i], applicationLoader));
+                CLASSES.put(names[i], (Class<?>) forName.invoke(null, names[i], applicationLoader));
             }
 
             final FabricLoader fabricLoader = FabricLoader.getInstance();

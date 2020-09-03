@@ -3,9 +3,8 @@ package net.devtech.grossfabrichacks.unsafe;
 import java.io.InputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.objectweb.asm.Opcodes;
 
-public class LoaderUnsafifier implements Opcodes {
+public class LoaderUnsafifier {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/LoaderUnsafifier");
 
     public static <T extends ClassLoader> T unsafifyLoader(final ClassLoader victim) {

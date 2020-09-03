@@ -8,7 +8,6 @@ import org.objectweb.asm.Opcodes;
 public class ReflectionUtil {
     private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader();
 
-    public static final boolean JAVA_11 = isVersion(11);
     public static final boolean JAVA_9 = isVersion(9);
 
     public static boolean isVersion(final int version) {
@@ -20,6 +19,14 @@ public class ReflectionUtil {
     public static <T> T getDeclaredFieldValue(final String klass, final String name, final Object object) {
         try {
             return (T) getDeclaredField(klass, name).get(object);
+        } catch (IllegalAccessException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static <T> T getDeclaredFieldValue(final String klass, final String name) {
+        try {
+            return (T) getDeclaredField(klass, name).get(null);
         } catch (IllegalAccessException exception) {
             throw new RuntimeException(exception);
         }

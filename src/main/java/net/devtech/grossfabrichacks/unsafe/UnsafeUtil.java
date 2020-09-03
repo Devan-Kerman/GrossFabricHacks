@@ -41,25 +41,25 @@ public class UnsafeUtil {
 
     private static final long FIRST_INT_KLASS;
 
-    private static final MethodHandle getInt = getMethod("getInt", Object.class, long.class);
-    private static final MethodHandle getLong = getMethod("getLong", Object.class, long.class);
-    private static final MethodHandle getObject = getMethod("getObject", Object.class, long.class);
-    private static final MethodHandle getAndSetInt = getMethod("getAndSetInt", Object.class, long.class, int.class);
-    private static final MethodHandle getAndAddInt = getMethod("getAndAddInt", Object.class, long.class, int.class);
-    private static final MethodHandle getAndSetLong = getMethod("getAndSetLong", Object.class, long.class, long.class);
-    private static final MethodHandle putInt = getMethod("putInt", Object.class, long.class, int.class);
-    private static final MethodHandle putLong = getMethod("putLong", Object.class, long.class, long.class);
-    private static final MethodHandle putObject = getMethod("putObject", Object.class, long.class, Object.class);
-    private static final MethodHandle putObjectVolatile = getMethod("putObjectVolatile", Object.class, long.class, Object.class);
-    private static final MethodHandle objectFieldOffset = getMethod("objectFieldOffset", Field.class);
-    private static final MethodHandle staticFieldOffset = getMethod("staticFieldOffset", Field.class);
-    private static final MethodHandle arrayBaseOffset = getMethod("arrayBaseOffset", Class.class);
-    private static final MethodHandle arrayIndexScale = getMethod("arrayIndexScale", Class.class);
-    private static final MethodHandle allocateMemory = getMethod("allocateMemory", long.class);
-    private static final MethodHandle copyMemory0 = getMethod("copyMemory", Object.class, long.class, Object.class, long.class, long.class);
-    private static final MethodHandle copyMemory1 = getMethod("copyMemory", long.class, long.class, long.class);
-    private static final MethodHandle allocateInstance = getMethod("allocateInstance", Class.class);
-    private static final MethodHandle defineClassHandle = getDefineClass();
+    private static final MethodHandle getInt = getHandle("getInt", int.class, Object.class, long.class);
+    private static final MethodHandle getLong = getHandle("getLong", long.class, Object.class, long.class);
+    private static final MethodHandle getObject = getHandle("getObject", Object.class, Object.class, long.class);
+    private static final MethodHandle getAndSetInt = getHandle("getAndSetInt", int.class, Object.class, long.class, int.class);
+    private static final MethodHandle getAndAddInt = getHandle("getAndAddInt", int.class, Object.class, long.class, int.class);
+    private static final MethodHandle getAndSetLong = getHandle("getAndSetLong", long.class, Object.class, long.class, long.class);
+    private static final MethodHandle putInt = getHandle("putInt", void.class, Object.class, long.class, int.class);
+    private static final MethodHandle putLong = getHandle("putLong", void.class, Object.class, long.class, long.class);
+    private static final MethodHandle putObject = getHandle("putObject", void.class, Object.class, long.class, Object.class);
+    private static final MethodHandle putObjectVolatile = getHandle("putObjectVolatile", void.class, Object.class, long.class, Object.class);
+    private static final MethodHandle objectFieldOffset = getHandle("objectFieldOffset", long.class, Field.class);
+    private static final MethodHandle staticFieldOffset = getHandle("staticFieldOffset", long.class, Field.class);
+    private static final MethodHandle arrayBaseOffset = getHandle("arrayBaseOffset", int.class, Class.class);
+    private static final MethodHandle arrayIndexScale = getHandle("arrayIndexScale", int.class, Class.class);
+    private static final MethodHandle allocateMemory = getHandle("allocateMemory", long.class, long.class);
+    private static final MethodHandle copyMemory0 = getHandle("copyMemory", void.class, Object.class, long.class, Object.class, long.class, long.class);
+    private static final MethodHandle copyMemory1 = getHandle("copyMemory", void.class, long.class, long.class, long.class);
+    private static final MethodHandle allocateInstance = getHandle("allocateInstance", Object.class, Class.class);
+    private static final MethodHandle defineClassHandle = getDefineClassHandle();
 
     /**
      * set the first 4 bytes of an object to something, this can be used to mutate the size of an array
@@ -137,7 +137,6 @@ public class UnsafeUtil {
             getAndAddInt(obj, KLASS_OFFSET, (int) classKlass);
         }
 
-        //noinspection unchecked
         return (B[]) obj;
     }
 
@@ -157,7 +156,6 @@ public class UnsafeUtil {
             getAndSetInt(object, KLASS_OFFSET, (int) (klassValue));
         }
 
-        //noinspection unchecked
         return (B) object;
     }
 
@@ -236,9 +234,9 @@ public class UnsafeUtil {
      * @param parameterTypes the parameter types of {@code name}
      * @return the Unsafe method with the specified name and parameter types.
      */
-    public static MethodHandle getMethod(final String name, final Class<?>... parameterTypes) {
+    public static MethodHandle getHandle(final String name, final Class<?> returnType, final Class<?>... parameterTypes) {
         try {
-            return IMPL_LOOKUP.unreflect(CLASS.getDeclaredMethod(name, parameterTypes));
+            return IMPL_LOOKUP.findVirtual(CLASS, name, MethodType.methodType(returnType, parameterTypes));
         } catch (final NoSuchMethodException | IllegalAccessException exception) {
             throw new RuntimeException(exception);
         }
@@ -323,7 +321,7 @@ public class UnsafeUtil {
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass,
                                            final ClassLoader loader, final ProtectionDomain protectionDomain) {
-        return invoke(defineClassHandle, null, loader, binaryName, klass, protectionDomain, null);
+        return invoke(defineClassHandle, theUnsafe, binaryName, klass, 0, klass.length, loader, protectionDomain);
     }
 
     public static int arrayBaseOffset(final Class<?> arrayClass) {
@@ -348,7 +346,7 @@ public class UnsafeUtil {
 
     public static <T> T invoke(final MethodHandle method, final Object... arguments) {
         try {
-            return (T) method.invoke(arguments);
+            return (T) method.invokeWithArguments(arguments);
         } catch (final Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -368,20 +366,20 @@ public class UnsafeUtil {
 
     private static Class<?> getUnsafeClass() {
         try {
-            return Class.forName("sun.misc.Unsafe");
+            return Class.forName("jdk.internal.misc.Unsafe");
         } catch (final ClassNotFoundException bad) {
             try {
-                return Class.forName("jdk.internal.misc.Unsafe");
+                return Class.forName("sun.misc.Unsafe");
             } catch (final ClassNotFoundException exception) {
                 throw new RuntimeException(exception);
             }
         }
     }
 
-    private static MethodHandle getDefineClass() {
+    private static MethodHandle getDefineClassHandle() {
         try {
-            return IMPL_LOOKUP.findStatic(Class.forName("java.lang.ClassLoader"), "defineClass1", MethodType.methodType(Class.class, ClassLoader.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class, String.class));
-        } catch (final NoSuchMethodException | IllegalAccessException | ClassNotFoundException exception) {
+            return IMPL_LOOKUP.findVirtual(CLASS, "defineClass0", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class));
+        } catch (final NoSuchMethodException | IllegalAccessException exception) {
             throw new RuntimeException(exception);
         }
     }
