@@ -3,12 +3,10 @@ package net.devtech.grossfabrichacks.reflection;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.objectweb.asm.Opcodes;
 
 public class ReflectionUtil {
     private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader();
 
-    public static final boolean JAVA_11 = isVersion(11);
     public static final boolean JAVA_9 = isVersion(9);
 
     public static boolean isVersion(final int version) {
@@ -25,9 +23,25 @@ public class ReflectionUtil {
         }
     }
 
+    public static <T> T getDeclaredFieldValue(final String klass, final String name) {
+        try {
+            return (T) getDeclaredField(klass, name).get(null);
+        } catch (IllegalAccessException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     public static <T> T getDeclaredFieldValue(final Class<?> klass, final String name, final Object object) {
         try {
             return (T) getDeclaredField(klass, name).get(object);
+        } catch (IllegalAccessException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    public static <T> T getDeclaredFieldValue(final Class<?> klass, final String name) {
+        try {
+            return (T) getDeclaredField(klass, name).get(null);
         } catch (IllegalAccessException exception) {
             throw new RuntimeException(exception);
         }
@@ -43,16 +57,8 @@ public class ReflectionUtil {
 
     public static Field getDeclaredField(final Class<?> klass, final String name) {
         try {
-            final Field field = klass.getDeclaredField(name);
-
-            if ((field.getModifiers() & Opcodes.ACC_STATIC) != 0) {
-                final Field modifiers = getDeclaredField(Field.class, "modifiers");
-
-                modifiers.setInt(field, field.getModifiers() & ~Opcodes.ACC_STATIC);
-            }
-
-            return field;
-        } catch (final IllegalAccessException | NoSuchFieldException exception) {
+            return klass.getDeclaredField(name);
+        } catch (final NoSuchFieldException exception) {
             throw new RuntimeException(exception);
         }
     }

@@ -1,6 +1,7 @@
 plugins {
     id "fabric-loom" version "0.4-SNAPSHOT"
     id "maven-publish"
+    id "maven"
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_8
@@ -10,12 +11,15 @@ archivesBaseName = project.archives_base_name
 version = project.mod_version
 group = project.maven_group
 
-minecraft {
-}
-
 configurations {
     // configuration that holds jars to include in the jar
     extraLibs
+}
+
+repositories {
+    maven {
+        url "https://jitpack.io"
+    }
 }
 
 dependencies {
@@ -36,6 +40,8 @@ dependencies {
     extraLibs "net.java.dev.jna:jna-platform:5.3.1"
 
     configurations.compile.extendsFrom(configurations.extraLibs)
+
+    modImplementation include("com.github.user11681:smartentrypoints:-SNAPSHOT")
 }
 
 jar {

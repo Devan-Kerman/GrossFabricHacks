@@ -1,5 +1,6 @@
 package net.devtech.grossfabrichacks.transformer;
 
+import net.devtech.grossfabrichacks.GFHState;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import org.objectweb.asm.tree.ClassNode;
@@ -14,19 +15,22 @@ public class TransformerApi {
 	 * manually load the class, causing it to inject itself into the class loading pipe.
 	 */
 	public static void manualLoad() {
-		//noinspection SillyAssignment,ConstantConditions
-		HackedMixinTransformer.shouldWrite = HackedMixinTransformer.shouldWrite;
+		try {
+			Class.forName("org.spongepowered.asm.mixin.transformer.HackedMixinTransformer");
+		} catch (final ClassNotFoundException exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	/**
 	 * listeners are called before mixins are applied, and gives you raw access to the class' bytecode, allowing you to fiddle with things ASM normally doens't let you.
 	 */
 	public static void registerPreMixinRawClassTransformer(RawClassTransformer transformer) {
-		if (HackedMixinTransformer.preMixinRawClassTransformer == null) {
-			HackedMixinTransformer.preMixinRawClassTransformer = transformer;
-			HackedMixinTransformer.transformPreMixinRawClass = true;
+		if (GFHState.preMixinRawClassTransformer == null) {
+			GFHState.preMixinRawClassTransformer = transformer;
+			GFHState.transformPreMixinRawClass = true;
 		} else {
-			HackedMixinTransformer.preMixinRawClassTransformer = HackedMixinTransformer.preMixinRawClassTransformer.andThen(transformer);
+			GFHState.preMixinRawClassTransformer = GFHState.preMixinRawClassTransformer.andThen(transformer);
 		}
 	}
 
@@ -34,12 +38,12 @@ public class TransformerApi {
 	 * transformers are called before mixin application with the class' classnode
 	 */
 	public static void registerPreMixinAsmClassTransformer(AsmClassTransformer transformer) {
-		if (HackedMixinTransformer.preMixinAsmClassTransformer == null) {
-			HackedMixinTransformer.preMixinAsmClassTransformer = transformer;
-			HackedMixinTransformer.transformPreMixinAsmClass = true;
-			HackedMixinTransformer.shouldWrite = true;
+		if (GFHState.preMixinAsmClassTransformer == null) {
+			GFHState.preMixinAsmClassTransformer = transformer;
+			GFHState.transformPreMixinAsmClass = true;
+			GFHState.shouldWrite = true;
 		} else {
-			HackedMixinTransformer.preMixinAsmClassTransformer = HackedMixinTransformer.preMixinAsmClassTransformer.andThen(transformer);
+			GFHState.preMixinAsmClassTransformer = GFHState.preMixinAsmClassTransformer.andThen(transformer);
 		}
 	}
 
@@ -47,12 +51,12 @@ public class TransformerApi {
 	 * these are the last transformers to be called, and are fed the output of the classwritten classnode after mixin and postmixinasmtransformers.
 	 */
 	public static void registerPostMixinRawClassTransformer(RawClassTransformer transformer) {
-		if (HackedMixinTransformer.postMixinRawClassTransformer == null) {
-			HackedMixinTransformer.postMixinRawClassTransformer = transformer;
-			HackedMixinTransformer.transformPostMixinRawClass = true;
-			HackedMixinTransformer.shouldWrite = true;
+		if (GFHState.postMixinRawClassTransformer == null) {
+			GFHState.postMixinRawClassTransformer = transformer;
+			GFHState.transformPostMixinRawClass = true;
+			GFHState.shouldWrite = true;
 		} else {
-			HackedMixinTransformer.postMixinRawClassTransformer = HackedMixinTransformer.postMixinRawClassTransformer.andThen(transformer);
+			GFHState.postMixinRawClassTransformer = GFHState.postMixinRawClassTransformer.andThen(transformer);
 		}
 	}
 
@@ -60,12 +64,12 @@ public class TransformerApi {
 	 * transformer is called right after mixin application.
 	 */
 	public static void registerPostMixinAsmClassTransformer(AsmClassTransformer transformer) {
-		if (HackedMixinTransformer.postMixinAsmClassTransformer == null) {
-			HackedMixinTransformer.postMixinAsmClassTransformer = transformer;
-			HackedMixinTransformer.transformPostMixinAsmClass = true;
-			HackedMixinTransformer.shouldWrite = true;
+		if (GFHState.postMixinAsmClassTransformer == null) {
+			GFHState.postMixinAsmClassTransformer = transformer;
+			GFHState.transformPostMixinAsmClass = true;
+			GFHState.shouldWrite = true;
 		} else {
-			HackedMixinTransformer.postMixinAsmClassTransformer = HackedMixinTransformer.postMixinAsmClassTransformer.andThen(transformer);
+			GFHState.postMixinAsmClassTransformer = GFHState.postMixinAsmClassTransformer.andThen(transformer);
 		}
 	}
 
@@ -73,5 +77,11 @@ public class TransformerApi {
 		MixinEnvironment environment = MixinEnvironment.getCurrentEnvironment();
 
 		return ((HackedMixinTransformer) environment.getActiveTransformer()).transform(environment, node, null);
+	}
+
+	static {
+		if (GFHState.mixinLoaded) {
+			manualLoad();
+		}
 	}
 }
