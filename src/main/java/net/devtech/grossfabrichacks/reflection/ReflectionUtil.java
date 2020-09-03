@@ -3,7 +3,6 @@ package net.devtech.grossfabrichacks.reflection;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.objectweb.asm.Opcodes;
 
 public class ReflectionUtil {
     private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader();
@@ -58,16 +57,8 @@ public class ReflectionUtil {
 
     public static Field getDeclaredField(final Class<?> klass, final String name) {
         try {
-            final Field field = klass.getDeclaredField(name);
-
-            if ((field.getModifiers() & Opcodes.ACC_STATIC) != 0) {
-                final Field modifiers = getDeclaredField(Field.class, "modifiers");
-
-                modifiers.setInt(field, field.getModifiers() & ~Opcodes.ACC_STATIC);
-            }
-
-            return field;
-        } catch (final IllegalAccessException | NoSuchFieldException exception) {
+            return klass.getDeclaredField(name);
+        } catch (final NoSuchFieldException exception) {
             throw new RuntimeException(exception);
         }
     }
