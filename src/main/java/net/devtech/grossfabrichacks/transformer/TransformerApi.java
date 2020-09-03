@@ -41,7 +41,7 @@ public class TransformerApi {
 		if (GFHState.preMixinAsmClassTransformer == null) {
 			GFHState.preMixinAsmClassTransformer = transformer;
 			GFHState.transformPreMixinAsmClass = true;
-			GFHState.shouldWrite = true;
+			GFHState.AppClassLoaded.shouldWrite = true;
 		} else {
 			GFHState.preMixinAsmClassTransformer = GFHState.preMixinAsmClassTransformer.andThen(transformer);
 		}
@@ -54,7 +54,7 @@ public class TransformerApi {
 		if (GFHState.postMixinRawClassTransformer == null) {
 			GFHState.postMixinRawClassTransformer = transformer;
 			GFHState.transformPostMixinRawClass = true;
-			GFHState.shouldWrite = true;
+			GFHState.AppClassLoaded.shouldWrite = true;
 		} else {
 			GFHState.postMixinRawClassTransformer = GFHState.postMixinRawClassTransformer.andThen(transformer);
 		}
@@ -67,7 +67,7 @@ public class TransformerApi {
 		if (GFHState.postMixinAsmClassTransformer == null) {
 			GFHState.postMixinAsmClassTransformer = transformer;
 			GFHState.transformPostMixinAsmClass = true;
-			GFHState.shouldWrite = true;
+			GFHState.AppClassLoaded.shouldWrite = true;
 		} else {
 			GFHState.postMixinAsmClassTransformer = GFHState.postMixinAsmClassTransformer.andThen(transformer);
 		}

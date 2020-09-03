@@ -26,7 +26,7 @@ public class HackedMixinTransformer extends MixinTransformer {
         final String name = classNode.name;
 
         // return immediately to reduce jumps and assignments
-        if (GFHState.shouldWrite) {
+        if (GFHState.AppClassLoaded.shouldWrite) {
             if (GFHState.transformPreMixinAsmClass) {
                 GFHState.preMixinAsmClassTransformer.transform(name, classNode);
             }
