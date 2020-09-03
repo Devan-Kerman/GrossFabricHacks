@@ -86,7 +86,7 @@ public class InstrumentationApi {
     public static void retransform(Class<?> cls, RawClassTransformer transformer) {
         try {
             CompatibleClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
-                if (cls.equals(classBeingRedefined)) {
+                if (cls == classBeingRedefined) {
                     return transformer.transform(className, classfileBuffer);
                 }
 

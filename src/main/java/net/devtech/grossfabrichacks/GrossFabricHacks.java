@@ -1,9 +1,13 @@
 package net.devtech.grossfabrichacks;
 
+import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Method;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
-import net.devtech.grossfabrichacks.reflection.AccessAllower;
-import net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier;
+import net.devtech.grossfabrichacks.reflection.access.AccessAllower;
+import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
+import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.LanguageAdapter;
 import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
 import org.apache.logging.log4j.LogManager;
@@ -45,17 +49,56 @@ public class GrossFabricHacks implements LanguageAdapter {
                     method.visitInsn(Opcodes.ARETURN);
                 }
             }
-        } catch (final Throwable exception) {
-            throw new RuntimeException(exception);
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
     }
 
-    static {
-        LOGGER.error("no good? no, this man is definitely up to evil.");
+    private static void loadClass(final String name, final Method defineClass, final ClassLoader appClassLoader) throws Throwable {
+        final InputStream classStream = GrossFabricHacks.class.getClassLoader().getResourceAsStream(name.replace('.', '/') + ".class");
+        final byte[] bytecode = new byte[classStream.available()];
 
+        while (classStream.read(bytecode) != -1);
+
+        defineClass.invoke(appClassLoader, name, bytecode, 0, bytecode.length);
+    }
+
+    public static class State {
+        public static boolean mixinLoaded;
+
+        public static boolean shouldWrite;
+        // micro-optimization: cache transformer presence
+        public static boolean transformPreMixinRawClass;
+        public static boolean transformPreMixinAsmClass;
+        public static boolean transformPostMixinRawClass;
+        public static boolean transformPostMixinAsmClass;
+        public static RawClassTransformer preMixinRawClassTransformer;
+        public static RawClassTransformer postMixinRawClassTransformer;
+        public static AsmClassTransformer preMixinAsmClassTransformer;
+        public static AsmClassTransformer postMixinAsmClassTransformer;
+    }
+
+    static {
         AccessAllower.init();
 
-        UNSAFE_LOADER = LoaderUnsafifier.unsafifyLoader(Thread.currentThread().getContextClassLoader());
+        try {
+            final Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
+            final ClassLoader applicationClassLoader = FabricLoader.class.getClassLoader();
+
+            loadClass("net.devtech.grossfabrichacks.GrossFabricHacks$State", defineClass, applicationClassLoader);
+            loadClass("net.devtech.grossfabrichacks.reflection.ReflectionUtil", defineClass, applicationClassLoader);
+            loadClass("net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier", defineClass, applicationClassLoader);
+            loadClass("net.devtech.grossfabrichacks.unsafe.UnsafeUtil$FirstInt", defineClass, applicationClassLoader);
+            loadClass("net.devtech.grossfabrichacks.unsafe.UnsafeUtil", defineClass, applicationClassLoader);
+
+            Class.forName("net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier", true, applicationClassLoader).getDeclaredMethod("unsafifyLoader", ClassLoader.class).invoke(null, GrossFabricHacks.class.getClassLoader());
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+
+        LOGGER.info("no good? no, this man is definitely up to evil.");
+
+        UNSAFE_LOADER = (UnsafeKnotClassLoader) Thread.currentThread().getContextClassLoader();
 
         SmartEntrypoints.executeOptionalEntrypoint("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
     }

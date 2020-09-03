@@ -2,7 +2,7 @@ package net.devtech.grossfabrichacks.mixin;
 
 import java.util.List;
 import java.util.Set;
-import net.devtech.grossfabrichacks.GFHState;
+import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.entrypoints.PrePreLaunch;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import org.objectweb.asm.tree.ClassNode;
@@ -39,11 +39,11 @@ public class GrossFabricHacksPlugin implements IMixinConfigPlugin {
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
 
     static {
-        GFHState.AppClassLoaded.mixinLoaded = true;
+        GrossFabricHacks.State.mixinLoaded = true;
 
         SmartEntrypoints.executeOptionalEntrypoint("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
 
-        if (GFHState.AppClassLoaded.shouldWrite) {
+        if (GrossFabricHacks.State.shouldWrite) {
             TransformerApi.manualLoad();
         }
     }

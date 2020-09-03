@@ -1,10 +1,10 @@
 package net.devtech.grossfabrichacks.unsafe;
 
+import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.security.ProtectionDomain;
@@ -59,6 +59,7 @@ public class UnsafeUtil {
     private static final MethodHandle copyMemory0 = getHandle("copyMemory", void.class, Object.class, long.class, Object.class, long.class, long.class);
     private static final MethodHandle copyMemory1 = getHandle("copyMemory", void.class, long.class, long.class, long.class);
     private static final MethodHandle allocateInstance = getHandle("allocateInstance", Object.class, Class.class);
+    private static final MethodHandle ensureClassInitialized = getHandle("ensureClassInitialized", void.class, Class.class);
     private static final MethodHandle defineClassHandle = getDefineClassHandle();
 
     /**
@@ -138,6 +139,18 @@ public class UnsafeUtil {
         }
 
         return (B[]) obj;
+    }
+
+    public static <B> B defineAndInitializeAndUnsafeCast(final Object object, final String klass, final ClassLoader loader) {
+        return unsafeCast(object, getKlassFromClass(findAndDefineAndInitializeClass(klass, loader)));
+    }
+
+    public static <B> B unsafeCast(final Object object, final String klass) {
+        return unsafeCast(object, loadClass(klass));
+    }
+
+    public static <B> B unsafeCast(final Object object, final Class<?> klass) {
+        return unsafeCast(object, getKlassFromClass(klass));
     }
 
     /**
@@ -311,6 +324,33 @@ public class UnsafeUtil {
         return invoke(allocateInstance, theUnsafe, klass);
     }
 
+    public static <T> Class<T> defineAndInitialize(final String binaryName, final byte[] klass) {
+        return defineAndInitialize(binaryName, klass, null, null);
+    }
+
+    public static <T> Class<T> defineAndInitialize(final String binaryName, final byte[] klass, final ClassLoader loader) {
+        return defineAndInitialize(binaryName, klass, loader, null);
+    }
+
+    public static <T> Class<T> defineAndInitialize(final String binaryName, final byte[] bytecode,
+                                                   final ClassLoader loader, final ProtectionDomain protectionDomain) {
+        final Class<?> klass;
+
+        ensureClassInititialized(klass = invoke(defineClassHandle, theUnsafe, binaryName, bytecode, 0, bytecode.length, loader, protectionDomain));
+
+        return (Class<T>) klass;
+    }
+
+    public static <T> Class<T> initialiizeClass(final Class<?> klass) {
+        ensureClassInititialized(klass);
+
+        return (Class<T>) klass;
+    }
+
+    public static void ensureClassInititialized(final Class<?> klass) {
+        invoke(ensureClassInitialized, theUnsafe, klass);
+    }
+
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass) {
         return defineClass(binaryName, klass, null, null);
     }
@@ -352,13 +392,30 @@ public class UnsafeUtil {
         }
     }
 
+    public static <T> Class<T> findAndDefineClass(final String binaryName, final ClassLoader loader) {
+        try {
+            final InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(binaryName.replace('.', '/') + ".class");
+            final byte[] bytecode = new byte[stream.available()];
+
+            while (stream.read(bytecode) != -1);
+
+            return defineClass(binaryName, bytecode, loader);
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    public static <T> Class<T> findAndDefineAndInitializeClass(final String binaryName, final ClassLoader loader) {
+        try {
+            return initialiizeClass(findAndDefineClass(binaryName, loader));
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
     private static Object getTheUnsafe() {
         try {
-            final Constructor<?> theConstructor = CLASS.getDeclaredConstructor();
-
-            theConstructor.setAccessible(true);
-
-            return theConstructor.newInstance();
+            return CLASS.getDeclaredConstructor().newInstance();
         } catch (final IllegalAccessException | NoSuchMethodException | InstantiationException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
@@ -366,13 +423,9 @@ public class UnsafeUtil {
 
     private static Class<?> getUnsafeClass() {
         try {
-            return Class.forName("jdk.internal.misc.Unsafe");
-        } catch (final ClassNotFoundException bad) {
-            try {
-                return Class.forName("sun.misc.Unsafe");
-            } catch (final ClassNotFoundException exception) {
-                throw new RuntimeException(exception);
-            }
+            return Class.forName(ReflectionUtil.JAVA_9 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
+        } catch (final ClassNotFoundException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -384,7 +437,7 @@ public class UnsafeUtil {
         }
     }
 
-    public static <T> Class<T> getClass(final String name) {
+    public static <T> Class<T> loadClass(final String name) {
         try {
             return (Class<T>) Class.forName(name);
         } catch (final ClassNotFoundException exception) {
@@ -392,7 +445,7 @@ public class UnsafeUtil {
         }
     }
 
-    public static <T> Class<T> getClass(final String name, final boolean initialize, final ClassLoader loader) {
+    public static <T> Class<T> loadClass(final String name, final boolean initialize, final ClassLoader loader) {
         try {
             return (Class<T>) Class.forName(name, initialize, loader);
         } catch (final ClassNotFoundException exception) {
