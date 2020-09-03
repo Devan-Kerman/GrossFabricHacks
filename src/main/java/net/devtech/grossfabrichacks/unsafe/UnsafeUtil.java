@@ -378,7 +378,7 @@ public class UnsafeUtil {
 
     private static MethodHandle getDefineClassHandle() {
         try {
-            return IMPL_LOOKUP.findVirtual(CLASS, "defineClass0", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class));
+            return IMPL_LOOKUP.findVirtual(CLASS, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class));
         } catch (final NoSuchMethodException | IllegalAccessException exception) {
             throw new RuntimeException(exception);
         }
