@@ -56,7 +56,7 @@ public class GrossFabricHacks implements LanguageAdapter {
         final InputStream classStream = GrossFabricHacks.class.getClassLoader().getResourceAsStream(name.replace('.', '/') + ".class");
         final byte[] bytecode = new byte[classStream.available()];
 
-        while (classStream.read(bytecode) != -1);
+        while (classStream.read(bytecode) != -1) {}
 
         defineClass.invoke(appClassLoader, name, bytecode, 0, bytecode.length);
     }

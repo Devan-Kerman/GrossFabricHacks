@@ -397,7 +397,7 @@ public class UnsafeUtil {
             final InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(binaryName.replace('.', '/') + ".class");
             final byte[] bytecode = new byte[stream.available()];
 
-            while (stream.read(bytecode) != -1);
+            while (stream.read(bytecode) != -1) {}
 
             return defineClass(binaryName, bytecode, loader);
         } catch (final Throwable throwable) {
