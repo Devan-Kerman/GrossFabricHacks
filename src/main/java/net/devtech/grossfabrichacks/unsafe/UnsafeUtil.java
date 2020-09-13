@@ -393,13 +393,17 @@ public class UnsafeUtil {
     }
 
     public static <T> Class<T> findAndDefineClass(final String binaryName, final ClassLoader loader) {
+        return defineClass(binaryName, findClass(binaryName), loader);
+    }
+
+    public static byte[] findClass(final String binaryName) {
         try {
             final InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(binaryName.replace('.', '/') + ".class");
             final byte[] bytecode = new byte[stream.available()];
 
             while (stream.read(bytecode) != -1) {}
 
-            return defineClass(binaryName, bytecode, loader);
+            return bytecode;
         } catch (final Throwable throwable) {
             throw new RuntimeException(throwable);
         }

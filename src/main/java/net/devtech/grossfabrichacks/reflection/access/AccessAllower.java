@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
+import java.util.List;
 import net.devtech.grossfabrichacks.instrumentation.CompatibleClassFileTransformer;
 import net.devtech.grossfabrichacks.instrumentation.InstrumentationApi;
 import net.devtech.grossfabrichacks.reflection.ReflectionUtil;
@@ -12,8 +13,12 @@ import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 public class AccessAllower {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/AccessAllower (Java9🅱️ix v2)");
@@ -23,6 +28,7 @@ public class AccessAllower {
 
         try {
             final Class<?> reflectionClass = Class.forName(ReflectionUtil.JAVA_9 ? "jdk.internal.reflect.Reflection" : "sun.reflect.Reflection");
+            final Class<?> unsafeQualifiedFieldAccessorImplClass = Class.forName("jdk.internal.reflect.UnsafeQualifiedFieldAccessorImpl");
             final CompatibleClassFileTransformer transformer = (final ClassLoader loader,
                                                                 final String className,
                                                                 final Class<?> classBeingRedefined,
@@ -40,6 +46,8 @@ public class AccessAllower {
                     transformMethodHandlesLookup(node);
                 } else if (classBeingRedefined == reflectionClass) {
                     transformReflection(node);
+                } else if (classBeingRedefined == unsafeQualifiedFieldAccessorImplClass) {
+                    transformUnsafeQualifiedFieldAccessorImpl(node);
                 } else {
                     return classfileBuffer;
                 }
@@ -51,7 +59,7 @@ public class AccessAllower {
             };
 
             InstrumentationApi.INSTRUMENTATION.addTransformer(transformer, true);
-            InstrumentationApi.INSTRUMENTATION.retransformClasses(AccessibleObject.class, Field.class, MethodHandles.Lookup.class, reflectionClass);
+            InstrumentationApi.INSTRUMENTATION.retransformClasses(AccessibleObject.class, Field.class, MethodHandles.Lookup.class, reflectionClass, unsafeQualifiedFieldAccessorImplClass);
             InstrumentationApi.INSTRUMENTATION.removeTransformer(transformer);
         } catch (final Throwable throwable) {
             throw new RuntimeException(throwable);
@@ -119,6 +127,30 @@ public class AccessAllower {
                 method.instructions.clear();
                 method.visitVarInsn(Opcodes.ALOAD, 0);
                 method.visitInsn(Opcodes.ARETURN);
+            }
+        }
+    }
+
+    public static void transformUnsafeQualifiedFieldAccessorImpl(final ClassNode klass) {
+        final List<MethodNode> methods = klass.methods;
+        final int size = methods.size();
+
+        for (int i = 0; i != size; i++) {
+            if (methods.get(i).name.equals("<init>")) {
+                final InsnList instructions = methods.get(i).instructions;
+                AbstractInsnNode instruction = instructions.getFirst();
+
+                while (instruction != null) {
+                    if (instruction.getOpcode() == Opcodes.ILOAD && ((VarInsnNode) instruction).var == 2) {
+                        instructions.set(instruction, new InsnNode(Opcodes.ICONST_0));
+
+                        return;
+                    }
+
+                    instruction = instruction.getNext();
+                }
+
+                return;
             }
         }
     }

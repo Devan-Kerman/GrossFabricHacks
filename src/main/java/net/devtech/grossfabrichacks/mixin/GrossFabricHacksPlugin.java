@@ -43,7 +43,7 @@ public class GrossFabricHacksPlugin implements IMixinConfigPlugin {
 
         SmartEntrypoints.executeOptionalEntrypoint("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
 
-        if (GrossFabricHacks.State.shouldWrite) {
+        if (GrossFabricHacks.State.shouldWrite || GrossFabricHacks.State.manualLoad) {
             TransformerApi.manualLoad();
         }
     }

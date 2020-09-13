@@ -15,10 +15,14 @@ public class TransformerApi {
 	 * manually load the class, causing it to inject itself into the class loading pipe.
 	 */
 	public static void manualLoad() {
-		try {
-			Class.forName("org.spongepowered.asm.mixin.transformer.HackedMixinTransformer");
-		} catch (final ClassNotFoundException exception) {
-			throw new RuntimeException(exception);
+		if (GrossFabricHacks.State.mixinLoaded) {
+			try {
+				Class.forName("org.spongepowered.asm.mixin.transformer.HackedMixinTransformer");
+			} catch (final ClassNotFoundException exception) {
+				throw new RuntimeException(exception);
+			}
+		} else {
+			GrossFabricHacks.State.manualLoad = true;
 		}
 	}
 
@@ -78,8 +82,6 @@ public class TransformerApi {
 	}
 
 	static {
-		if (GrossFabricHacks.State.mixinLoaded) {
-			manualLoad();
-		}
+		manualLoad();
 	}
 }

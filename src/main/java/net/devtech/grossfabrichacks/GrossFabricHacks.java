@@ -63,6 +63,7 @@ public class GrossFabricHacks implements LanguageAdapter {
 
     public static class State {
         public static boolean mixinLoaded;
+        public static boolean manualLoad;
 
         public static boolean shouldWrite;
         // micro-optimization: cache transformer presence

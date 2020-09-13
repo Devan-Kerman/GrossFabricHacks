@@ -56,7 +56,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
                 klass = this.findLoadedClass(name);
 
                 if (klass == null) {
-                    try {
+//                    try {
                         if (!name.startsWith("com.google.gson.") && !name.startsWith("java.")) {
                             final byte[] input = delegate.getPostMixinClassByteArray(name);
 
@@ -78,11 +78,11 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
                         } else {
                             klass = applicationClassLoader.loadClass(name);
                         }
-                    } catch (final ClassFormatError formatError) {
-                        LOGGER.warn("A ClassFormatError was encountered while attempting to define {}; resorting to unsafe definition.", name);
-
-                        klass = UnsafeUtil.defineClass(name, delegate.getPostMixinClassByteArray(name));
-                    }
+//                    } catch (final ClassFormatError formatError) {
+//                        LOGGER.warn("A ClassFormatError was encountered while attempting to define {}; resorting to unsafe definition.", name);
+//
+//                        klass = UnsafeUtil.defineClass(name, delegate.getPostMixinClassByteArray(name));
+//                    }
                 }
 
                 CLASSES.put(name, klass);
