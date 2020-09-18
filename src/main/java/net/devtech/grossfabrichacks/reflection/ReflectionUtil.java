@@ -7,13 +7,7 @@ import java.lang.reflect.Method;
 public class ReflectionUtil {
     private static final ClassLoader LOADER = Thread.currentThread().getContextClassLoader();
 
-    public static final boolean JAVA_9 = isVersion(9);
-
-    public static boolean isVersion(final int version) {
-        final String string = System.getProperty("java.version");
-
-        return string.indexOf('.') > 1 ? Integer.parseUnsignedInt(string.substring(0, 2)) >= version : Integer.parseUnsignedInt(string.substring(2, 3)) >= version;
-    }
+    public static final boolean JAVA_9;
 
     public static <T> T getDeclaredFieldValue(final String klass, final String name, final Object object) {
         try {
@@ -112,5 +106,11 @@ public class ReflectionUtil {
         } catch (final IllegalAccessException | InvocationTargetException exception) {
             throw new RuntimeException(exception);
         }
+    }
+
+    static {
+        final String version = System.getProperty("java.version");
+
+        JAVA_9 = version.indexOf('.') == -1 || version.charAt(2) == '9';
     }
 }
