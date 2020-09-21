@@ -169,10 +169,10 @@ public class InstrumentationApi {
             field.setAccessible(true);
 
             instrumentation = (Instrumentation) field.get(null);
-        } catch (final Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
 
-        LOGGER.info("Successfully attached instrumentation agent.");
+            LOGGER.info("Successfully attached instrumentation agent.");
+        } catch (final Throwable throwable) {
+            LOGGER.error("An error occurred during an attempt to attach an instrumentation agent, which might be due to spaces in the path of the game's installation.", throwable);
+        }
     }
 }
