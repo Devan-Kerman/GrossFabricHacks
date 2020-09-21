@@ -1,5 +1,5 @@
 plugins {
-    id "fabric-loom" version "0.4-SNAPSHOT"
+    id "fabric-loom" version "0.5-SNAPSHOT"
     id "maven-publish"
     id "maven"
 }
@@ -11,43 +11,30 @@ archivesBaseName = project.archives_base_name
 version = project.mod_version
 group = project.maven_group
 
-configurations {
-    // configuration that holds jars to include in the jar
-    extraLibs
-}
-
 repositories {
-    maven {
-        url "https://jitpack.io"
-    }
+    maven {url = "https://dl.bintray.com/user11681/maven"}
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    minecraft("com.mojang:minecraft:${project.minecraft_version}")
+    mappings("net.fabricmc:yarn:${project.yarn_mappings}:v2")
+    modImplementation("net.fabricmc:fabric-loader:${project.loader_version}")
 
-    compileOnly "com.google.code.findbugs:jsr305:+"
-    compileOnly "org.jetbrains:annotations:+"
+    compileOnly("com.google.code.findbugs:jsr305:+")
+    compileOnly("org.jetbrains:annotations:+")
 
-    testImplementation "org.junit.jupiter:junit-jupiter:+"
+    testImplementation("org.junit.jupiter:junit-jupiter:+")
 
     // concern
-   // extraLibs files("${System.getProperty('java.home')}/../lib/tools.jar")
-    // https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy-agent
-    extraLibs group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.10.13'
-    extraLibs "net.java.dev.jna:jna:5.3.1"
-    extraLibs "net.java.dev.jna:jna-platform:5.3.1"
+    // extraLibs files("${System.getProperty('java.home')}/../lib/tools.jar")
 
-    configurations.compile.extendsFrom(configurations.extraLibs)
+    implementation(include("net.bytebuddy:byte-buddy-agent:+"))
+//    implementation(include("net.java.dev.jna:jna:5.3.1"))
+//    implementation(include("net.java.dev.jna:jna-platform:5.3.1"))
 
-    modImplementation include("com.github.user11681:smartentrypoints:-SNAPSHOT")
-}
-
-jar {
-    from {
-        configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+    modImplementation(include("user11681:dynamicentry:0.0.2"))
+    include(implementation("user11681:reflect:0.0.0"))
+    include(implementation("net.gudenau.lib:unsafe:1.2.14"))
 }
 
 processResources {
@@ -74,12 +61,21 @@ tasks.withType(JavaCompile) {
 // if it is present.
 // If you remove this task, sources will not be generated.
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = "sources"
-    from sourceSets.main.allSource
+    archiveClassifier.set("sources")
+
+    from(sourceSets.main.allSource)
 }
 
 jar {
-    from "LICENSE"
+    from("LICENSE")
+
+    manifest {
+        attributes(
+                "Manifest-Version": "1.0",
+                "Agent-Class": "net.devtech.grossfabrichacks.instrumentation.InstrumentationApi",
+                "Can-Retransform-Classes": "true"
+        )
+    }
 }
 
 // configure the maven publication

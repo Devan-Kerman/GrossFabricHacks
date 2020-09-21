@@ -1,19 +1,17 @@
 package net.devtech.grossfabrichacks.instrumentation;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.management.ManagementFactory;
 import java.util.HashSet;
 import java.util.Set;
 import net.bytebuddy.agent.ByteBuddyAgent;
-import net.devtech.grossfabrichacks.mixin.GrossFabricHacksPlugin;
+import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
+import net.fabricmc.loader.api.FabricLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
@@ -23,7 +21,13 @@ public class InstrumentationApi {
     private static final Set<String> TRANSFORMABLE = new HashSet<>();
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/InstrumentationApi");
 
-    public static final Instrumentation INSTRUMENTATION;
+    public static Instrumentation instrumentation;
+
+    public static void agentmain(String argument, Instrumentation instrumentation) {
+        InstrumentationApi.instrumentation = instrumentation;
+
+        LOGGER.info("test");
+    }
 
     /**
      * adds a transformer that pipes a class through TransformerBootstrap,
@@ -85,7 +89,7 @@ public class InstrumentationApi {
      */
     public static void retransform(Class<?> cls, RawClassTransformer transformer) {
         try {
-            CompatibleClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+            CompatibilityClassFileTransformer fileTransformer = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
                 if (cls == classBeingRedefined) {
                     return transformer.transform(className, classfileBuffer);
                 }
@@ -93,43 +97,18 @@ public class InstrumentationApi {
                 return classfileBuffer;
             };
 
-            INSTRUMENTATION.addTransformer(fileTransformer, true);
-            INSTRUMENTATION.retransformClasses(cls);
-            INSTRUMENTATION.removeTransformer(fileTransformer);
+            instrumentation.addTransformer(fileTransformer, true);
+            instrumentation.retransformClasses(cls);
+            instrumentation.removeTransformer(fileTransformer);
         } catch (UnmodifiableClassException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * get an instance of Instrumentation, capable of redefinition and redefining of classes.
-     */
-    public static Instrumentation getInstrumentation() {
-        try {
-            return (Instrumentation) Class.forName("gross.agent.InstrumentationAgent")
-                    .getDeclaredField("instrumentation")
-                    .get(null);
-        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void unpack(File file) throws IOException {
-        try (InputStream stream = GrossFabricHacksPlugin.class.getResourceAsStream("/jars/gross_agent.jar")) {
-            try (FileOutputStream out = new FileOutputStream(file)) {
-                byte[] arr = new byte[2048];
-                int len;
-                while ((len = stream.read(arr)) != -1) {
-                    out.write(arr, 0, len);
-                }
-            }
         }
     }
 
     // to seperate out the static block
     private static class Transformable {
         private static boolean init;
-        private static final CompatibleClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
+        private static final CompatibilityClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {
             ClassReader reader = new ClassReader(classfileBuffer);
             ClassNode node = new ClassNode();
             reader.accept(node, 0);
@@ -146,13 +125,13 @@ public class InstrumentationApi {
         };
 
         private static void deinit() {
-            INSTRUMENTATION.removeTransformer(TRANSFORMER);
+            instrumentation.removeTransformer(TRANSFORMER);
             init = false;
         }
 
         private static void init() {
             if (!init) {
-                INSTRUMENTATION.addTransformer(TRANSFORMER);
+                instrumentation.addTransformer(TRANSFORMER);
                 init = true;
             }
         }
@@ -164,30 +143,26 @@ public class InstrumentationApi {
     }
 
     static {
-        File grossHackFolder = new File("gross_hacks");
-        //noinspection ResultOfMethodCallIgnored
-        grossHackFolder.mkdirs();
-        try {
-            File grossJar = new File(grossHackFolder, "gross_agent.jar");
-            if (!grossJar.exists()) {
-                LOGGER.info("no gross_agent.jar found, cloning new one");
-                unpack(grossJar);
-            } else {
-                LOGGER.info("gross_agent.jar located!");
-            }
+        final String name = ManagementFactory.getRuntimeMXBean().getName();
+        final String PID = name.substring(0, name.indexOf('@'));
+        final String source = GrossFabricHacks.class.getProtectionDomain().getCodeSource().getLocation().getFile();
 
-            String name = ManagementFactory.getRuntimeMXBean()
-                    .getName();
-            LOGGER.info("VM name: " + name);
-            String pid = name.substring(0, name.indexOf('@'));
-            LOGGER.info("VM PID: " + pid);
-            LOGGER.info("Attaching to VM");
-            ByteBuddyAgent.attach(grossJar, pid);
-        } catch (Throwable e) {
-            LOGGER.error("error in attaching agent to JVM");
-            throw new RuntimeException(e);
+        LOGGER.info("Attaching instrumentation agent to VM.");
+
+        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            ByteBuddyAgent.attach(new File(source, "jars/gross_agent.jar"), PID);
+
+            try {
+                instrumentation = (Instrumentation) Class.forName("gross.agent.InstrumentationAgent").getDeclaredField("instrumentation").get(null);
+            } catch (final Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+        } else {
+            LOGGER.info(ByteBuddyAgent.class);
+
+            ByteBuddyAgent.attach(new File(source), PID);
         }
 
-        INSTRUMENTATION = getInstrumentation();
+        LOGGER.info("Successfully attached instrumentation agent.");
     }
 }

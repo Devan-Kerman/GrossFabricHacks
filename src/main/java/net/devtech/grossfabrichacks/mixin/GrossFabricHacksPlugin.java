@@ -8,7 +8,7 @@ import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
-import user11681.smartentrypoints.SmartEntrypoints;
+import user11681.dynamicentry.DynamicEntry;
 
 public class GrossFabricHacksPlugin implements IMixinConfigPlugin {
     @Override
@@ -41,7 +41,7 @@ public class GrossFabricHacksPlugin implements IMixinConfigPlugin {
     static {
         GrossFabricHacks.State.mixinLoaded = true;
 
-        SmartEntrypoints.executeOptionalEntrypoint("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
+        DynamicEntry.executeOptionalEntrypoint("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
 
         if (GrossFabricHacks.State.shouldWrite || GrossFabricHacks.State.manualLoad) {
             TransformerApi.manualLoad();

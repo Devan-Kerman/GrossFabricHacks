@@ -9,9 +9,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class UnsafeKnotClassLoader extends KnotClassLoader {
-    public static final Object2ReferenceOpenHashMap<String, Class<?>> CLASSES = new Object2ReferenceOpenHashMap<>();
-    public static final Class<KnotClassLoader> SUPERCLASS = KnotClassLoader.class;
+    public static final Object2ReferenceOpenHashMap<String, Class<?>> classes = new Object2ReferenceOpenHashMap<>();
+    public static final Class<KnotClassLoader> superclass = KnotClassLoader.class;
     public static final ClassLoader applicationClassLoader;
+
     public static final KnotClassDelegate delegate;
     public static final URLClassLoader parent;
 
@@ -24,7 +25,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     public Class<?> defineClass(final String name, final byte[] bytes) {
         final Class<?> klass = UnsafeUtil.defineClass(name, bytes, null, null);
 
-        CLASSES.put(name, klass);
+        classes.put(name, klass);
 
         return klass;
     }
@@ -33,7 +34,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
         final Class<?> klass = super.findLoadedClass(name);
 
         if (klass == null) {
-            return CLASSES.get(name);
+            return classes.get(name);
         }
 
         return klass;
@@ -42,7 +43,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     @Override
     public boolean isClassLoaded(final String name) {
         synchronized (super.getClassLoadingLock(name)) {
-            return super.findLoadedClass(name) != null || CLASSES.get(name) != null;
+            return super.findLoadedClass(name) != null || classes.get(name) != null;
         }
     }
 
@@ -50,7 +51,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
     @SuppressWarnings("deprecation")
     public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
         synchronized (this.getClassLoadingLock(name)) {
-            Class<?> klass = CLASSES.get(name);
+            Class<?> klass = classes.get(name);
 
             if (klass == null) {
                 klass = this.findLoadedClass(name);
@@ -85,7 +86,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
 //                    }
                 }
 
-                CLASSES.put(name, klass);
+                classes.put(name, klass);
             }
 
             if (resolve) {
@@ -104,16 +105,14 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
 
             UnsafeUtil.unsafeCast(knotClassLoader, UnsafeUtil.getKlassFromClass(UnsafeKnotClassLoader.class));
 
-            CLASSES.put(SUPERCLASS.getName(), SUPERCLASS);
-            CLASSES.put(thisClass.getName(), thisClass);
+            classes.put(superclass.getName(), superclass);
+            classes.put(thisClass.getName(), thisClass);
 
             for (final String name : new String[]{
                 "net.devtech.grossfabrichacks.GrossFabricHacks$State",
-                "net.devtech.grossfabrichacks.reflection.ReflectionUtil",
-                "net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier",
                 "net.devtech.grossfabrichacks.unsafe.UnsafeUtil$FirstInt",
                 "net.devtech.grossfabrichacks.unsafe.UnsafeUtil"}) {
-                CLASSES.put(name, Class.forName(name, false, applicationClassLoader));
+                classes.put(name, Class.forName(name, false, applicationClassLoader));
             }
 
             for (final String name : new String[]{
@@ -122,7 +121,7 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
                 "net.devtech.grossfabrichacks.transformer.TransformerApi",
                 "net.devtech.grossfabrichacks.instrumentation.InstrumentationApi",
                 "org.spongepowered.asm.mixin.transformer.HackedMixinTransformer"}) {
-                CLASSES.put(name, UnsafeUtil.findAndDefineClass(name, applicationClassLoader));
+                classes.put(name, UnsafeUtil.findAndDefineClass(name, applicationClassLoader));
             }
 
             delegate = ((KnotClassLoader) knotClassLoader).getDelegate();

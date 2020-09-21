@@ -1,23 +1,17 @@
 package net.devtech.grossfabrichacks;
 
 import java.io.InputStream;
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
-import net.devtech.grossfabrichacks.reflection.access.AccessAllower;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
+import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.LanguageAdapter;
 import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
+import net.gudenau.lib.unsafe.Unsafe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-import user11681.smartentrypoints.SmartEntrypoints;
+import user11681.dynamicentry.DynamicEntry;
 
 public class GrossFabricHacks implements LanguageAdapter {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks");
@@ -27,6 +21,7 @@ public class GrossFabricHacks implements LanguageAdapter {
     @Override
     public native <T> T create(net.fabricmc.loader.api.ModContainer mod, String value, Class<T> type);
 
+/*
     private static void loadSimpleMethodHandle() {
         try {
             final String internalName = "net/devtech/grossfabrichacks/reflection/SimpleMethodHandle";
@@ -51,15 +46,7 @@ public class GrossFabricHacks implements LanguageAdapter {
             throw new RuntimeException(throwable);
         }
     }
-
-    private static void loadClass(final String name, final Method defineClass, final ClassLoader appClassLoader) throws Throwable {
-        final InputStream classStream = GrossFabricHacks.class.getClassLoader().getResourceAsStream(name.replace('.', '/') + ".class");
-        final byte[] bytecode = new byte[classStream.available()];
-
-        while (classStream.read(bytecode) != -1) {}
-
-        defineClass.invoke(appClassLoader, name, bytecode, 0, bytecode.length);
-    }
+ */
 
     public static class State {
         public static boolean mixinLoaded;
@@ -78,27 +65,31 @@ public class GrossFabricHacks implements LanguageAdapter {
     }
 
     static {
-        AccessAllower.init();
+        LOGGER.info("no good? no, this man is definitely up to evil.");
 
         try {
-            final Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
             final ClassLoader applicationClassLoader = FabricLoader.class.getClassLoader();
+            final ClassLoader KnotClassLoader = GrossFabricHacks.class.getClassLoader();
 
-            loadClass("net.devtech.grossfabrichacks.GrossFabricHacks$State", defineClass, applicationClassLoader);
-            loadClass("net.devtech.grossfabrichacks.reflection.ReflectionUtil", defineClass, applicationClassLoader);
-            loadClass("net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier", defineClass, applicationClassLoader);
-            loadClass("net.devtech.grossfabrichacks.unsafe.UnsafeUtil$FirstInt", defineClass, applicationClassLoader);
-            loadClass("net.devtech.grossfabrichacks.unsafe.UnsafeUtil", defineClass, applicationClassLoader);
+            for (final String name : new String[]{
+                "net.devtech.grossfabrichacks.GrossFabricHacks$State",
+                "net.devtech.grossfabrichacks.unsafe.UnsafeUtil$FirstInt",
+                "net.devtech.grossfabrichacks.unsafe.UnsafeUtil"}) {
+                final InputStream classStream = KnotClassLoader.getResourceAsStream(name.replace('.', '/') + ".class");
+                final byte[] bytecode = new byte[classStream.available()];
 
-            Class.forName("net.devtech.grossfabrichacks.unsafe.LoaderUnsafifier", true, applicationClassLoader).getDeclaredMethod("unsafifyLoader", ClassLoader.class).invoke(null, GrossFabricHacks.class.getClassLoader());
+                while (classStream.read(bytecode) != -1) {}
+
+                Unsafe.defineClass(name, bytecode, 0, bytecode.length, applicationClassLoader, GrossFabricHacks.class.getProtectionDomain());
+            }
+
+            LOGGER.warn("KnotClassLoader, you fool! Loading me was a grave mistake.");
+
+            UNSAFE_LOADER = UnsafeUtil.defineAndInitializeAndUnsafeCast(KnotClassLoader, "net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader", KnotClassLoader.getClass().getClassLoader());
         } catch (final Throwable throwable) {
             throw new RuntimeException(throwable);
         }
 
-        LOGGER.info("no good? no, this man is definitely up to evil.");
-
-        UNSAFE_LOADER = (UnsafeKnotClassLoader) Thread.currentThread().getContextClassLoader();
-
-        SmartEntrypoints.executeOptionalEntrypoint("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
+        DynamicEntry.executeOptionalEntrypoint("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
     }
 }
