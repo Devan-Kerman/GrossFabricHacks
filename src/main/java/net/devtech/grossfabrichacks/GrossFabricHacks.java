@@ -2,7 +2,6 @@ package net.devtech.grossfabrichacks;
 
 import java.io.InputStream;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
-import net.devtech.grossfabrichacks.instrumentation.InstrumentationApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
@@ -99,8 +98,6 @@ public class GrossFabricHacks implements LanguageAdapter {
         } catch (final Throwable throwable) {
             throw new RuntimeException(throwable);
         }
-
-        InstrumentationApi.instrumentation.getAllLoadedClasses();
 
         DynamicEntry.executeOptionalEntrypoint("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
     }
