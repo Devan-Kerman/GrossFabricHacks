@@ -1,17 +1,20 @@
 package net.devtech.grossfabrichacks.instrumentation;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import net.bytebuddy.agent.ByteBuddyAgent;
-import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import net.fabricmc.loader.api.FabricLoader;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
@@ -22,12 +25,6 @@ public class InstrumentationApi {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/InstrumentationApi");
 
     public static Instrumentation instrumentation;
-
-    public static void agentmain(String argument, Instrumentation instrumentation) {
-        InstrumentationApi.instrumentation = instrumentation;
-
-        LOGGER.info("test");
-    }
 
     /**
      * adds a transformer that pipes a class through TransformerBootstrap,
@@ -145,22 +142,35 @@ public class InstrumentationApi {
     static {
         final String name = ManagementFactory.getRuntimeMXBean().getName();
         final String PID = name.substring(0, name.indexOf('@'));
-        final String source = GrossFabricHacks.class.getProtectionDomain().getCodeSource().getLocation().getFile();
 
-        LOGGER.info("Attaching instrumentation agent to VM.");
+//        if (!InstrumentationApi.class.getClassLoader().getClass().getName().contains("Knot")) {
+//            Thread.dumpStack();
+//            System.exit(-1);
+//        }
 
-        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-            ByteBuddyAgent.attach(new File(source, "jars/gross_agent.jar"), PID);
+        try {
+            final URI source = InstrumentationApi.class.getProtectionDomain().getCodeSource().getLocation().toURI();
 
-            try {
-                instrumentation = (Instrumentation) Class.forName("gross.agent.InstrumentationAgent").getDeclaredField("instrumentation").get(null);
-            } catch (final Throwable throwable) {
-                throw new RuntimeException(throwable);
+            LOGGER.info("Attaching instrumentation agent to VM.");
+
+            if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+                ByteBuddyAgent.attach(new File(source.resolve("jars/gross_agent.jar")), PID);
+            } else {
+                final File jar = FabricLoader.getInstance().getGameDir().resolve("mods/gross_agent.jar").toFile();
+
+                IOUtils.write(IOUtils.toByteArray(source), new FileOutputStream(jar));
+                ByteBuddyAgent.attach(jar, PID);
+
+                jar.delete();
             }
-        } else {
-            LOGGER.info(ByteBuddyAgent.class);
 
-            ByteBuddyAgent.attach(new File(source), PID);
+            final Field field = Class.forName("net.devtech.grossfabrichacks.instrumentation.InstrumentationAgent", false, FabricLoader.class.getClassLoader()).getDeclaredField("instrumentation");
+
+            field.setAccessible(true);
+
+            instrumentation = (Instrumentation) field.get(null);
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
 
         LOGGER.info("Successfully attached instrumentation agent.");

@@ -119,7 +119,6 @@ public class UnsafeKnotClassLoader extends KnotClassLoader {
                 "net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer",
                 "net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer",
                 "net.devtech.grossfabrichacks.transformer.TransformerApi",
-                "net.devtech.grossfabrichacks.instrumentation.InstrumentationApi",
                 "org.spongepowered.asm.mixin.transformer.HackedMixinTransformer"}) {
                 classes.put(name, UnsafeUtil.findAndDefineClass(name, applicationClassLoader));
             }

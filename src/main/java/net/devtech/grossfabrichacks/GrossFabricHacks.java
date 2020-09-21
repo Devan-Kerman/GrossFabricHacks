@@ -2,16 +2,17 @@ package net.devtech.grossfabrichacks;
 
 import java.io.InputStream;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
+import net.devtech.grossfabrichacks.instrumentation.InstrumentationApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.LanguageAdapter;
 import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
-import net.gudenau.lib.unsafe.Unsafe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import user11681.dynamicentry.DynamicEntry;
+import user11681.reflect.Reflect;
 
 public class GrossFabricHacks implements LanguageAdapter {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks");
@@ -71,16 +72,25 @@ public class GrossFabricHacks implements LanguageAdapter {
             final ClassLoader applicationClassLoader = FabricLoader.class.getClassLoader();
             final ClassLoader KnotClassLoader = GrossFabricHacks.class.getClassLoader();
 
-            for (final String name : new String[]{
+            final String[] classes = {
+                "net.gudenau.lib.unsafe.Unsafe",
+                "net.devtech.grossfabrichacks.instrumentation.InstrumentationAgent",
+                "net.devtech.grossfabrichacks.instrumentation.InstrumentationApi",
                 "net.devtech.grossfabrichacks.GrossFabricHacks$State",
-                "net.devtech.grossfabrichacks.unsafe.UnsafeUtil$FirstInt",
-                "net.devtech.grossfabrichacks.unsafe.UnsafeUtil"}) {
+                "net.devtech.grossfabrichacks.unsafe.UnsafeUtil",
+                "net.devtech.grossfabrichacks.unsafe.UnsafeUtil$FirstInt"
+            };
+
+            final int classCount = classes.length;
+
+            for (int i = FabricLoader.getInstance().isDevelopmentEnvironment() ? 1 : 0; i < classCount; i++) {
+                final String name = classes[i];
                 final InputStream classStream = KnotClassLoader.getResourceAsStream(name.replace('.', '/') + ".class");
                 final byte[] bytecode = new byte[classStream.available()];
 
                 while (classStream.read(bytecode) != -1) {}
 
-                Unsafe.defineClass(name, bytecode, 0, bytecode.length, applicationClassLoader, GrossFabricHacks.class.getProtectionDomain());
+                Reflect.defineClass(applicationClassLoader, name, bytecode, GrossFabricHacks.class.getProtectionDomain());
             }
 
             LOGGER.warn("KnotClassLoader, you fool! Loading me was a grave mistake.");
@@ -89,6 +99,8 @@ public class GrossFabricHacks implements LanguageAdapter {
         } catch (final Throwable throwable) {
             throw new RuntimeException(throwable);
         }
+
+        InstrumentationApi.instrumentation.getAllLoadedClasses();
 
         DynamicEntry.executeOptionalEntrypoint("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
     }
