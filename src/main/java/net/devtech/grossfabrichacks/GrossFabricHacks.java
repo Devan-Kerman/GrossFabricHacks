@@ -100,8 +100,6 @@ public class GrossFabricHacks implements LanguageAdapter {
             throw new RuntimeException(throwable);
         }
 
-        InstrumentationApi.instrumentation.getAllLoadedClasses();
-
         DynamicEntry.executeOptionalEntrypoint("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
     }
 }
