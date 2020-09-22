@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Agent-Class: net.devtech.grossfabrichacks.instrumentation.InstrumentationAgent
+Can-Retransform-Classes: true
+Can-Redefine-Classes: true

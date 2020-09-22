@@ -1,32 +1,14 @@
 package net.devtech.grossfabrichacks.unsafe;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.io.InputStream;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
-import net.devtech.grossfabrichacks.reflection.ReflectionUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.gudenau.lib.unsafe.Unsafe;
 
 /**
  * works across all normal JVMs I think
  */
-public class UnsafeUtil {
-    private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks/UnsafeUtil");
-
-    public static final Class<?> CLASS = getUnsafeClass();
-    public static final String CLASS_NAME = CLASS.getName();
-    public static final Object theUnsafe = getTheUnsafe();
-
-    public static final Object javaLangAccess;
-
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
+public class UnsafeUtil extends Unsafe {
     // constants
     public static final boolean x64;
     public static final int addressFactor;
@@ -43,30 +25,6 @@ public class UnsafeUtil {
     public static final long CLASS_KLASS_OFFSET;
 
     private static final long FIRST_INT_KLASS;
-
-    private static final Method getInt = getMethod("getInt", Object.class, long.class);
-    private static final Method getLong = getMethod("getLong", Object.class, long.class);
-    private static final Method getObject = getMethod("getObject", Object.class, long.class);
-    private static final Method getAndSetInt = getMethod("getAndSetInt", Object.class, long.class, int.class);
-    private static final Method getAndAddInt = getMethod("getAndAddInt", Object.class, long.class, int.class);
-    private static final Method getAndSetLong = getMethod("getAndSetLong", Object.class, long.class, long.class);
-    private static final Method putInt = getMethod("putInt", Object.class, long.class, int.class);
-    private static final Method putLong = getMethod("putLong", Object.class, long.class, long.class);
-    private static final Method putObject = getMethod("putObject", Object.class, long.class, Object.class);
-    private static final Method putObjectVolatile = getMethod("putObjectVolatile", Object.class, long.class, Object.class);
-    private static final Method objectFieldOffset = getMethod("objectFieldOffset", Field.class);
-    private static final Method staticFieldOffset = getMethod("staticFieldOffset", Field.class);
-    private static final Method arrayBaseOffset = getMethod("arrayBaseOffset", Class.class);
-    private static final Method arrayIndexScale = getMethod("arrayIndexScale", Class.class);
-    private static final Method allocateMemory = getMethod("allocateMemory", long.class);
-    private static final Method copyMemory0 = getMethod("copyMemory", Object.class, long.class, Object.class, long.class, long.class);
-    private static final Method copyMemory1 = getMethod("copyMemory", long.class, long.class, long.class);
-    private static final Method allocateInstance = getMethod("allocateInstance", Class.class);
-    private static final Method defineClass;
-    private static final MethodHandle defineClassHandle;
-
-
-    static {}
 
     /**
      * set the first 4 bytes of an object to something, this can be used to mutate the size of an array
@@ -144,8 +102,19 @@ public class UnsafeUtil {
             getAndAddInt(obj, KLASS_OFFSET, (int) classKlass);
         }
 
-        //noinspection unchecked
         return (B[]) obj;
+    }
+
+    public static <B> B defineAndInitializeAndUnsafeCast(final Object object, final String klass, final ClassLoader loader) {
+        return unsafeCast(object, getKlassFromClass(findAndDefineAndInitializeClass(klass, loader)));
+    }
+
+    public static <B> B unsafeCast(final Object object, final String klass) {
+        return unsafeCast(object, loadClass(klass));
+    }
+
+    public static <B> B unsafeCast(final Object object, final Class<?> klass) {
+        return unsafeCast(object, getKlassFromClass(klass));
     }
 
     /**
@@ -164,7 +133,6 @@ public class UnsafeUtil {
             getAndSetInt(object, KLASS_OFFSET, (int) (klassValue));
         }
 
-        //noinspection unchecked
         return (B) object;
     }
 
@@ -238,237 +206,68 @@ public class UnsafeUtil {
         return (getInt(objects, offset + index * scale) & 0xFFFFFFFL) * addressFactor;
     }
 
-    /**
-     * @param name           get method {@code name} from the Unsafe class returned by {@link #getUnsafeClass}
-     * @param parameterTypes the parameter types of {@code name}
-     * @return the Unsafe method with the specified name and parameter types.
-     */
-    public static Method getMethod(final String name, final Class<?>... parameterTypes) {
-        try {
-            final Method method = CLASS.getDeclaredMethod(name, parameterTypes);
-
-            method.setAccessible(true);
-
-            return method;
-        } catch (final NoSuchMethodException exception) {
-            throw new RuntimeException(exception);
-        }
+    public static <T> Class<T> defineAndInitialize(final String binaryName, final byte[] klass) {
+        return defineAndInitialize(binaryName, klass, null, null);
     }
 
-    /**
-     * Unsafe#getInt
-     */
-    public static int getInt(final Object object, final long offset) {
-        try {
-            return (int) getInt.invoke(theUnsafe, object, offset);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
+    public static <T> Class<T> defineAndInitialize(final String binaryName, final byte[] klass, final ClassLoader loader) {
+        return defineAndInitialize(binaryName, klass, loader, null);
     }
 
-    /**
-     * Unsafe#getLong
-     */
-    public static long getLong(final Object object, final long offset) {
-        try {
-            return (long) getLong.invoke(theUnsafe, object, offset);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
+    public static <T> Class<T> defineAndInitialize(final String binaryName, final byte[] bytecode,
+                                                   final ClassLoader loader, final ProtectionDomain protectionDomain) {
+        final Class<?> klass;
+
+        ensureClassInitialized(klass = defineClass(binaryName, bytecode, 0, bytecode.length, loader, protectionDomain));
+
+        return (Class<T>) klass;
     }
 
-    /**
-     * Unsafe#getObject
-     */
-    public static Object getObject(final Object object, final long offset) {
-        try {
-            return getObject.invoke(theUnsafe, object, offset);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
+    public static <T> Class<T> initialiizeClass(final Class<?> klass) {
+        ensureClassInitialized(klass);
 
-    public static int getAndSetInt(final Object object, final long offset, final int value) {
-        try {
-            return (int) getAndSetInt.invoke(theUnsafe, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static int getAndAddInt(final Object object, final long offset, final int value) {
-        try {
-            return (int) getAndAddInt.invoke(theUnsafe, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static long getAndSetLong(final Object object, final long offset, final long value) {
-        try {
-            return (long) getAndSetLong.invoke(theUnsafe, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static void putInt(final Object object, final long offset, final int value) {
-        try {
-            putInt.invoke(theUnsafe, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static void putLong(final Object object, final long offset, final long value) {
-        try {
-            putLong.invoke(theUnsafe, object, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static void putObject(final Object owner, final long offset, final Object value) {
-        try {
-            putObject.invoke(theUnsafe, owner, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static void putObjectVolatile(final Object owner, final long offset, final Object value) {
-        try {
-            putObjectVolatile.invoke(theUnsafe, owner, offset, value);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static long objectFieldOffset(final Field field) {
-        try {
-            return (long) objectFieldOffset.invoke(theUnsafe, field);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static long staticFieldOffset(final Field field) {
-        try {
-            return (long) staticFieldOffset.invoke(theUnsafe, field);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static <T> T allocateInstance(final Class<?> klass) {
-        try {
-            return (T) allocateInstance.invoke(theUnsafe, klass);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
+        return (Class<T>) klass;
     }
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass) {
-        return defineClass(binaryName, klass, null, null);
+        return defineClass(binaryName, klass, 0, klass.length, null, null);
     }
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass, final ClassLoader loader) {
-        return defineClass(binaryName, klass, loader, null);
+        return defineClass(binaryName, klass, 0, klass.length, loader, null);
     }
 
     public static <T> Class<T> defineClass(final String binaryName, final byte[] klass,
                                            final ClassLoader loader, final ProtectionDomain protectionDomain) {
+        return defineClass(binaryName, klass, 0, klass.length, loader, protectionDomain);
+    }
+
+    public static <T> Class<T> findAndDefineClass(final String binaryName, final ClassLoader loader) {
+        return defineClass(binaryName, findClass(binaryName), loader);
+    }
+
+    public static byte[] findClass(final String binaryName) {
         try {
-            return (ReflectionUtil.JAVA_11
-                ? (Class<T>) defineClassHandle.invoke(javaLangAccess, loader, binaryName, klass, protectionDomain, null)
-                : (Class<T>) defineClass.invoke(theUnsafe, binaryName, klass, 0, klass.length, loader, protectionDomain)
-            );
-        } catch (final Throwable exception) {
-            throw new RuntimeException(exception);
+            final InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(binaryName.replace('.', '/') + ".class");
+            final byte[] bytecode = new byte[stream.available()];
+
+            while (stream.read(bytecode) != -1) {}
+
+            return bytecode;
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
     }
 
-    public static int arrayBaseOffset(final Class<?> arrayClass) {
+    public static <T> Class<T> findAndDefineAndInitializeClass(final String binaryName, final ClassLoader loader) {
         try {
-            return (int) arrayBaseOffset.invoke(theUnsafe, arrayClass);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
+            return initialiizeClass(findAndDefineClass(binaryName, loader));
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
     }
 
-    public static int arrayIndexScale(final Class<?> arrayClass) {
-        try {
-            return (int) arrayIndexScale.invoke(theUnsafe, arrayClass);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static long allocateMemory(final long bytes) {
-        try {
-            return (long) allocateMemory.invoke(theUnsafe, bytes);
-        } catch (final IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void copyMemory(final long srcAddress, final long destAddress, final long bytes) {
-        try {
-            copyMemory1.invoke(theUnsafe, srcAddress, destAddress, bytes);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static void copyMemory(final Object src, final long srcAddress, final Object dest, final long destAddress, final long bytes) {
-        try {
-            copyMemory0.invoke(theUnsafe, src, srcAddress, dest, destAddress, bytes);
-        } catch (final IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    private static Object getTheUnsafe() {
-        try {
-            final Constructor<?> theConstructor = CLASS.getDeclaredConstructor();
-
-            theConstructor.setAccessible(true);
-
-            return theConstructor.newInstance();
-        } catch (final IllegalAccessException | NoSuchMethodException | InstantiationException | InvocationTargetException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    private static Class<?> getUnsafeClass() {
-        try {
-            return Class.forName("sun.misc.Unsafe");
-        } catch (final ClassNotFoundException bad) {
-            try {
-                return Class.forName("jdk.internal.misc.Unsafe");
-            } catch (final ClassNotFoundException exception) {
-                throw new RuntimeException(exception);
-            }
-        }
-    }
-
-    private static Method getDefineClass() {
-        try {
-            return getMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
-        } catch (final RuntimeException gone) {
-            throw new RuntimeException(gone);
-        }
-    }
-
-    private static MethodHandle getDefineClassHandle() {
-        try {
-            return LOOKUP.findVirtual(Class.forName("jdk.internal.access.JavaLangAccess"), "defineClass", MethodType.methodType(Class.class, ClassLoader.class, String.class, byte[].class, ProtectionDomain.class, String.class));
-        } catch (final NoSuchMethodException | IllegalAccessException | ClassNotFoundException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public static <T> Class<T> getClass(final String name) {
+    public static <T> Class<T> loadClass(final String name) {
         try {
             return (Class<T>) Class.forName(name);
         } catch (final ClassNotFoundException exception) {
@@ -476,7 +275,7 @@ public class UnsafeUtil {
         }
     }
 
-    public static <T> Class<T> getClass(final String name, final boolean initialize, final ClassLoader loader) {
+    public static <T> Class<T> loadClass(final String name, final boolean initialize, final ClassLoader loader) {
         try {
             return (Class<T>) Class.forName(name, initialize, loader);
         } catch (final ClassNotFoundException exception) {
@@ -489,19 +288,7 @@ public class UnsafeUtil {
     }
 
     static {
-        LOGGER.info("UnsafeUtil init!");
-
         try {
-            if (ReflectionUtil.JAVA_9) {
-                defineClass = null;
-                defineClassHandle = getDefineClassHandle();
-                javaLangAccess = ReflectionUtil.invoke(ReflectionUtil.getDeclaredMethod("jdk.internal.access.SharedSecrets", "getJavaLangAccess"), null);
-            } else {
-                defineClass = getDefineClass();
-                defineClassHandle = null;
-                javaLangAccess = null;
-            }
-
             FIELD_OFFSET = objectFieldOffset(FirstInt.class.getField("val"));
 
             if (FIELD_OFFSET == 8) { // 32bit jvm
@@ -524,8 +311,8 @@ public class UnsafeUtil {
             }
 
             addressFactor = x64 ? 8 : 1;
-        } catch (ReflectiveOperationException exception) {
-            throw new RuntimeException(exception);
+        } catch (final Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
 
         FIRST_INT_KLASS = getKlass(new FirstInt());
