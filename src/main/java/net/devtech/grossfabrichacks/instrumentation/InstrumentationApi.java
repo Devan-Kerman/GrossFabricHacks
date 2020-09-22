@@ -6,10 +6,10 @@ import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import net.bytebuddy.agent.ByteBuddyAgent;
+import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
@@ -140,37 +140,25 @@ public class InstrumentationApi {
     }
 
     static {
-        final String name = ManagementFactory.getRuntimeMXBean().getName();
-        final String PID = name.substring(0, name.indexOf('@'));
-
-//        if (!InstrumentationApi.class.getClassLoader().getClass().getName().contains("Knot")) {
-//            Thread.dumpStack();
-//            System.exit(-1);
-//        }
-
         try {
-            final URI source = InstrumentationApi.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+            final String name = ManagementFactory.getRuntimeMXBean().getName();
+            final File jar = new File(System.getProperty("user.home"), "gross_agent.jar");
 
             LOGGER.info("Attaching instrumentation agent to VM.");
 
-            if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                ByteBuddyAgent.attach(new File(source.resolve("jars/gross_agent.jar")), PID);
-            } else {
-                final File jar = FabricLoader.getInstance().getGameDir().resolve("mods/gross_agent.jar").toFile();
+            LOGGER.info(jar.getAbsolutePath());
+            IOUtils.write(IOUtils.toByteArray(GrossFabricHacks.class.getClassLoader().getResource("jars/gross_agent.jar")), new FileOutputStream(jar));
+            ByteBuddyAgent.attach(jar, name.substring(0, name.indexOf('@')));
 
-                IOUtils.write(IOUtils.toByteArray(source), new FileOutputStream(jar));
-                ByteBuddyAgent.attach(jar, PID);
+            LOGGER.info("Successfully attached instrumentation agent.");
 
-                jar.delete();
-            }
+            jar.delete();
 
             final Field field = Class.forName("net.devtech.grossfabrichacks.instrumentation.InstrumentationAgent", false, FabricLoader.class.getClassLoader()).getDeclaredField("instrumentation");
 
             field.setAccessible(true);
 
             instrumentation = (Instrumentation) field.get(null);
-
-            LOGGER.info("Successfully attached instrumentation agent.");
         } catch (final Throwable throwable) {
             LOGGER.error("An error occurred during an attempt to attach an instrumentation agent, which might be due to spaces in the path of the game's installation.", throwable);
         }
