@@ -8,6 +8,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.transformer.ext.Extensions;
 
+import java.lang.reflect.Field;
+
 public class HackedMixinTransformer extends MixinTransformer {
     public static final Class<MixinTransformer> superclass = MixinTransformer.class;
 
@@ -71,8 +73,14 @@ public class HackedMixinTransformer extends MixinTransformer {
             LOGGER.info("Unsafe cast mixin transformer success!");
 
             instance = (HackedMixinTransformer) mixinTransformer;
-            processor = (MixinProcessor) Class.forName("org.spongepowered.asm.mixin.transformer.MixinTransformer").getDeclaredField("processor").get(mixinTransformer);
-            extensions = (Extensions) superclass.getDeclaredField("extensions").get(mixinTransformer);
+            
+            Field processorField = Class.forName("org.spongepowered.asm.mixin.transformer.MixinTransformer").getDeclaredField("processor");
+            processorField.setAccessible(true);
+            processor = (MixinProcessor) processorField.get(mixinTransformer);
+            
+            Field extensionsField = superclass.getDeclaredField("extensions");
+            extensionsField.setAccessible(true);
+            extensions = (Extensions) extensionsField.get(mixinTransformer);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
