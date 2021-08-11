@@ -90,7 +90,7 @@ public class GrossFabricHacks implements LanguageAdapter {
 
                 while (classStream.read(bytecode) != -1) {}
 
-                Reflect.defineClass(applicationClassLoader, name, bytecode, GrossFabricHacks.class.getProtectionDomain());
+                UnsafeUtil.defineClass(name, bytecode, applicationClassLoader, GrossFabricHacks.class.getProtectionDomain());
             }
 
             LOGGER.warn("KnotClassLoader, you fool! Loading me was a grave mistake.");
@@ -100,6 +100,7 @@ public class GrossFabricHacks implements LanguageAdapter {
             throw new RuntimeException(throwable);
         }
 
-        DynamicEntry.executeOptionalEntrypoint("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
+        // shh i had to because dynamicentry changed :tiny_potato:
+        DynamicEntry.execute("gfh:prePrePreLaunch", PrePrePreLaunch.class, PrePrePreLaunch::onPrePrePreLaunch);
     }
 }

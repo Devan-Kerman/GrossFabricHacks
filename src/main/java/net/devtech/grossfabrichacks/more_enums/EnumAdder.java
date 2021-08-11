@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import sun.reflect.ConstructorAccessor;
+import jdk.internal.reflect.ConstructorAccessor;
 
 public class EnumAdder {
 	private static final Field ENUM_CONSTANT_DIRECTORY;

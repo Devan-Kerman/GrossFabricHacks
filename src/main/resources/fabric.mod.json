@@ -5,16 +5,19 @@
     "name": "GrossFabricHacks",
     "description": "Transform anything and everything",
     "authors": [
-        "HalfOf2"
+        "HalfOf2",
+        "auoeke",
+        "sschr15"
     ],
     "contact": {
-        "sources": "https://github.com/Devan-Kerman/Fabric-Transformer"
+        "sources": "https://github.com/auoeke/GrossFabricHacks"
     },
     "license": "MPLv2",
     "icon": "assets/grossfabrichacks/icon.png",
     "environment": "*",
     "depends": {
-        "fabricloader": ">=0.9.3+build.207"
+        "fabricloader": ">=0.11.6",
+        "java": ">=16"
     },
     "mixins": [
         "grossfabrichacks.mixins.json"

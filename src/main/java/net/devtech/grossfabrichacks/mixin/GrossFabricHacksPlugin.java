@@ -41,7 +41,7 @@ public class GrossFabricHacksPlugin implements IMixinConfigPlugin {
     static {
         GrossFabricHacks.State.mixinLoaded = true;
 
-        DynamicEntry.executeOptionalEntrypoint("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
+        DynamicEntry.execute("gfh:prePreLaunch", PrePreLaunch.class, PrePreLaunch::onPrePreLaunch);
 
         if (GrossFabricHacks.State.shouldWrite || GrossFabricHacks.State.manualLoad) {
             TransformerApi.manualLoad();
