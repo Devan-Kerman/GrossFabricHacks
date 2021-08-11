@@ -48,7 +48,6 @@ processResources {
 
     from(sourceSets.main.resources.srcDirs) {
         exclude "fabric.mod.json"
-        setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     }
 }
 
@@ -66,7 +65,7 @@ tasks.withType(JavaCompile).configureEach {
 task sourcesJar(type: Jar, dependsOn: classes) {
     archiveClassifier.set("sources")
 
-    from(sourceSets.main.allSource).setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    from(sourceSets.main.allSource)
 }
 
 jar {
