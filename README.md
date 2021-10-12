@@ -8,11 +8,11 @@ https://github.com/Devan-Kerman/GrossFabricHacks/wiki
 ```groovy
 repositories {
     maven {
-        url = 'https://raw.githubusercontent.com/Devan-Kerman/Devan-Repo/master/'
+        url = 'https://maven.concern.i.ng'
     }
 }
 
 dependencies {
-    modImplementation group: 'net.devtech', name: 'grossfabrichacks', version: '6.1'
+    modImplementation group: 'net.devtech', name: 'grossfabrichacks', version: '8.0'
 }
 ```
