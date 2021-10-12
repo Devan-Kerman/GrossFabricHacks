@@ -1,18 +1,18 @@
 package net.devtech.grossfabrichacks;
 
-import java.io.InputStream;
 import net.devtech.grossfabrichacks.entrypoints.PrePrePreLaunch;
-import net.devtech.grossfabrichacks.instrumentation.InstrumentationApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import net.devtech.grossfabrichacks.unsafe.UnsafeUtil;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.LanguageAdapter;
-import net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader;
+import net.fabricmc.loader.impl.FabricLoaderImpl;
+import net.fabricmc.loader.impl.launch.knot.UnsafeKnotClassLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import user11681.dynamicentry.DynamicEntry;
-import user11681.reflect.Reflect;
+
+import java.io.InputStream;
 
 public class GrossFabricHacks implements LanguageAdapter {
     private static final Logger LOGGER = LogManager.getLogger("GrossFabricHacks");
@@ -44,10 +44,10 @@ public class GrossFabricHacks implements LanguageAdapter {
                 }
             }
         } catch (final Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw Rethrower.rethrow(throwable);
         }
     }
- */
+*/
 
     public static class State {
         public static boolean mixinLoaded;
@@ -66,6 +66,10 @@ public class GrossFabricHacks implements LanguageAdapter {
     }
 
     static {
+        if (!FabricLoaderImpl.INSTANCE.getGameProvider().requiresUrlClassLoader()) {
+            throw new RuntimeException("Unable to init GFH! Add `-Dfabric.loader.useCompatibilityClassLoader=true` to your JVM args and relaunch.");
+        }
+
         LOGGER.info("no good? no, this man is definitely up to evil.");
 
         try {
@@ -86,18 +90,16 @@ public class GrossFabricHacks implements LanguageAdapter {
             for (int i = FabricLoader.getInstance().isDevelopmentEnvironment() ? 1 : 0; i < classCount; i++) {
                 final String name = classes[i];
                 final InputStream classStream = KnotClassLoader.getResourceAsStream(name.replace('.', '/') + ".class");
-                final byte[] bytecode = new byte[classStream.available()];
-
-                while (classStream.read(bytecode) != -1) {}
+                final byte[] bytecode = classStream.readAllBytes();
 
                 UnsafeUtil.defineClass(name, bytecode, applicationClassLoader, GrossFabricHacks.class.getProtectionDomain());
             }
 
             LOGGER.warn("KnotClassLoader, you fool! Loading me was a grave mistake.");
 
-            UNSAFE_LOADER = UnsafeUtil.defineAndInitializeAndUnsafeCast(KnotClassLoader, "net.fabricmc.loader.launch.knot.UnsafeKnotClassLoader", KnotClassLoader.getClass().getClassLoader());
+            UNSAFE_LOADER = UnsafeUtil.defineAndInitializeAndUnsafeCast(KnotClassLoader, "net.fabricmc.loader.impl.launch.knot.UnsafeKnotClassLoader", KnotClassLoader.getClass().getClassLoader());
         } catch (final Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw Rethrower.rethrow(throwable);
         }
 
         // shh i had to because dynamicentry changed :tiny_potato:

@@ -1,10 +1,10 @@
 package net.devtech.grossfabrichacks.massm;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import it.unimi.dsi.fastutil.chars.CharList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * a low-level optimized class file parser just for the constant pool and inheritance data
@@ -107,53 +107,50 @@ public class Cls {
 			for (int i = 0; i < constant_pool_count; i++) {
 				byte tag = this.bytecode[index];
 				switch (tag) {
-				// @formatter:off
-				case 7:
-					className.add(index);
-					index += 3;
-					break;
-				case 8:
-				case 16:
-					other.add(index);
-					index += 3;
-					break;
-					case 9:
-					fieldRef.add(index);
-					index += 5;
-					break;
-				case 10:
-				case 11:
-					methodRef.add(index);
-					index += 5;
-					break;
-				case 3:
-				case 4:
-					primitiveConst.add(index);
-					index += 5;
-					break;
-				case 12:
-					nameAndType.add(index);
-					index += 5;
-					break;
-				case 18:
-					other.add(index);
-					index += 5;
-					break;
-				case 5:
-				case 6:
-					primitiveConst.add(index);
-					index += 9;
-					break;
-				case 15:
-					other.add(index);
-					index += 4;
-					break;
-				default: {
-					utf8.add(index);
-					int len = this.getU2(index);
-					index+=len + 3;
-				}
-				//@formatter:on
+					// @formatter:off
+					case 7 -> {
+						className.add(index);
+						index += 3;
+					}
+					case 8, 16 -> {
+						other.add(index);
+						index += 3;
+					}
+					case 9 -> {
+						fieldRef.add(index);
+						index += 5;
+					}
+					case 10, 11 -> {
+						methodRef.add(index);
+						index += 5;
+					}
+					case 3, 4 -> {
+						primitiveConst.add(index);
+						index += 5;
+					}
+					case 12 -> {
+						nameAndType.add(index);
+						index += 5;
+					}
+					case 18 -> {
+						other.add(index);
+						index += 5;
+					}
+					case 5, 6 -> {
+						primitiveConst.add(index);
+						index += 9;
+					}
+					case 15 -> {
+						other.add(index);
+						index += 4;
+					}
+					default -> {
+						utf8.add(index);
+						int len = this.getU2(index);
+						index += len + 3;
+					}
+
+					//@formatter:on
 				}
 				this.other = other.toCharArray();
 				this.utf8 = utf8.toCharArray();

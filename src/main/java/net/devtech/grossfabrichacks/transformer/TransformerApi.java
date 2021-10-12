@@ -1,6 +1,7 @@
 package net.devtech.grossfabrichacks.transformer;
 
 import net.devtech.grossfabrichacks.GrossFabricHacks;
+import net.devtech.grossfabrichacks.Rethrower;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
 import org.objectweb.asm.tree.ClassNode;
@@ -19,7 +20,7 @@ public class TransformerApi {
 			try {
 				Class.forName("org.spongepowered.asm.mixin.transformer.HackedMixinTransformer");
 			} catch (final ClassNotFoundException exception) {
-				throw new RuntimeException(exception);
+				throw Rethrower.rethrow(exception);
 			}
 		} else {
 			GrossFabricHacks.State.manualLoad = true;

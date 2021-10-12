@@ -1,15 +1,8 @@
 package net.devtech.grossfabrichacks.instrumentation;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.lang.instrument.Instrumentation;
-import java.lang.instrument.UnmodifiableClassException;
-import java.lang.management.ManagementFactory;
-import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.Set;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.devtech.grossfabrichacks.GrossFabricHacks;
+import net.devtech.grossfabrichacks.Rethrower;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
 import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.devtech.grossfabrichacks.transformer.asm.RawClassTransformer;
@@ -19,6 +12,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.lang.instrument.Instrumentation;
+import java.lang.instrument.UnmodifiableClassException;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
 
 public class InstrumentationApi {
     private static final Set<String> TRANSFORMABLE = new HashSet<>();
@@ -52,7 +54,7 @@ public class InstrumentationApi {
         try {
             retransform(Class.forName(cls), transformer);
         } catch (final ClassNotFoundException exception) {
-            throw new RuntimeException(exception);
+            throw Rethrower.rethrow(exception);
         }
     }
 
@@ -73,7 +75,7 @@ public class InstrumentationApi {
         try {
             retransform(Class.forName(cls), transformer);
         } catch (final ClassNotFoundException exception) {
-            throw new RuntimeException(exception);
+            throw Rethrower.rethrow(exception);
         }
     }
 
@@ -98,11 +100,11 @@ public class InstrumentationApi {
             instrumentation.retransformClasses(cls);
             instrumentation.removeTransformer(fileTransformer);
         } catch (UnmodifiableClassException e) {
-            throw new RuntimeException(e);
+            throw Rethrower.rethrow(e);
         }
     }
 
-    // to seperate out the static block
+    // to separate out the static block
     private static class Transformable {
         private static boolean init;
         private static final CompatibilityClassFileTransformer TRANSFORMER = (loader, className, classBeingRedefined, protectionDomain, classfileBuffer) -> {

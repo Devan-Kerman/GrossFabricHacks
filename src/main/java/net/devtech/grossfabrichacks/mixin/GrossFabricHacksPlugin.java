@@ -1,7 +1,5 @@
 package net.devtech.grossfabrichacks.mixin;
 
-import java.util.List;
-import java.util.Set;
 import net.devtech.grossfabrichacks.GrossFabricHacks;
 import net.devtech.grossfabrichacks.entrypoints.PrePreLaunch;
 import net.devtech.grossfabrichacks.transformer.TransformerApi;
@@ -9,6 +7,9 @@ import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import user11681.dynamicentry.DynamicEntry;
+
+import java.util.List;
+import java.util.Set;
 
 public class GrossFabricHacksPlugin implements IMixinConfigPlugin {
     @Override
