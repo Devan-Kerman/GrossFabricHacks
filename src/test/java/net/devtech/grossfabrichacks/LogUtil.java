@@ -75,7 +75,7 @@ public class LogUtil {
                 test.accept(i);
             }
         } catch (final Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw Rethrower.rethrow(throwable);
         }
 
         return (System.nanoTime() - start) / 1000000000D;
